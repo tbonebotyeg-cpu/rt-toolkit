@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer base {
+  :root {
+    /* RT Toolkit dark theme — light mode intentionally uses same dark palette */
+    --background: 240 6% 7%;
+    --foreground: 0 0% 95%;
+    --card: 240 10% 12%;
+    --card-foreground: 0 0% 95%;
+    --popover: 240 10% 12%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 8% 18%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 240 8% 18%;
+    --muted-foreground: 240 5% 60%;
+    --accent: 217 91% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 6% 20%;
+    --input: 240 6% 20%;
+    --ring: 217 91% 60%;
+    --radius: 0.625rem;
+    /* Result / warning colors */
+    --pass: 142 71% 45%;
+    --fail: 0 72% 51%;
+    --warn: 38 92% 50%;
+  }
+
+  .dark {
+    --background: 240 6% 7%;
+    --foreground: 0 0% 95%;
+    --card: 240 10% 12%;
+    --card-foreground: 0 0% 95%;
+    --popover: 240 10% 12%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 8% 18%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 240 8% 18%;
+    --muted-foreground: 240 5% 60%;
+    --accent: 217 91% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 6% 20%;
+    --input: 240 6% 20%;
+    --ring: 217 91% 60%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    background-color: #0f0f14;
+    color: #f2f2f5;
+  }
+
+  html {
+    @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Large tap targets for field use */
+  button, [role="button"], input, select, textarea {
+    min-height: 48px;
+  }
+
+  /* High-contrast result numbers */
+  .result-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    color: #ffffff;
+  }
+
+  .result-value-lg {
+    font-size: 2.5rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.03em;
+    color: #ffffff;
+  }
+
+  /* Subtle animation for calc results */
+  @keyframes fadeSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-result {
+    animation: fadeSlideIn 0.15s ease-out;
+  }
+
+  /* Surface variant for IQI inline card */
+  .surface-alt {
+    background-color: #1e2030;
+  }
+}
