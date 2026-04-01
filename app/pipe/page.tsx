@@ -8,7 +8,7 @@ export default function PipePage() {
       <div className="px-4 pt-4 pb-3">
         <h1 className="text-xl font-bold tracking-tight">Pipe Schedules</h1>
         <p className="text-xs text-muted-foreground mt-0.5">
-          ASME B36.10M &mdash; Wall thickness &amp; IQI reference
+          Wall thickness &amp; IQI reference
         </p>
       </div>
       <PipeTable />

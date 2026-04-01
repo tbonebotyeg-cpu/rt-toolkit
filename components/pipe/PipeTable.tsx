@@ -118,9 +118,6 @@ export default function PipeTable() {
               <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">
                 NPS {pipe.npsDisplay} — {entry.schedule}
               </p>
-              <p className="text-sm text-blue-400 font-semibold mt-0.5">
-                ASME B36.10M
-              </p>
             </div>
             <div className="text-right">
               <span className={cn(
@@ -182,7 +179,7 @@ export default function PipeTable() {
 
           {/* IQI Wire Selection */}
           <div>
-            <p className="section-label mb-3">IQI Wire Selection — ASME T-276</p>
+            <p className="section-label mb-3">IQI Wire Selection</p>
             <div className="grid grid-cols-2 gap-3">
               {/* Source Side */}
               <div className="rounded-lg border border-blue-700/40 bg-blue-950/25 p-4">
@@ -193,7 +190,7 @@ export default function PipeTable() {
                   #{derived.sourceWire}
                 </p>
                 <p className="text-xs text-blue-300 font-semibold mt-1">
-                  Set {derived.sourceSet}
+                  {derived.sourceWire >= 6 ? "B Penny" : "A Penny"}
                 </p>
                 {derived.sourceWireData && (
                   <p className="text-[11px] text-muted-foreground tabular-nums mt-2">
@@ -212,7 +209,7 @@ export default function PipeTable() {
                   #{derived.filmWire}
                 </p>
                 <p className="text-xs text-amber-300 font-semibold mt-1">
-                  Set {derived.filmSet}
+                  {derived.filmWire >= 6 ? "B Penny" : "A Penny"}
                 </p>
                 {derived.filmWireData && (
                   <p className="text-[11px] text-muted-foreground tabular-nums mt-2">
