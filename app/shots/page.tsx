@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ReferenceShot, SourceType, Technique } from "@/types";
+import { ReferenceShot, SourceType, Technique, ShootingTechnique } from "@/types";
 import { loadShots, addShot, deleteShot, generateId } from "@/lib/storage/shots";
 import { loadSettings } from "@/lib/storage/settings";
 import { loadFilms } from "@/lib/storage/films";
@@ -103,8 +103,13 @@ export default function ShotsPage() {
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {shot.nps}&quot; {shot.schedule} &middot; {shot.technique} &middot;{" "}
-                    {minutesToMmSs(shot.exposureTimeMinutes)} @ {shot.sourceActivityCi.toFixed(1)} Ci
+                    {shot.nps}&quot; {shot.schedule} &middot; {shot.technique}
+                    {shot.shootingTechnique && (
+                      <span className={shot.shootingTechnique === "DWSI" ? " text-amber-400/80" : " text-emerald-400/80"}>
+                        {" "}&middot; {shot.shootingTechnique}
+                      </span>
+                    )}
+                    {" "}&middot; {minutesToMmSs(shot.exposureTimeMinutes)} @ {shot.sourceActivityCi.toFixed(1)} Ci
                   </p>
                 </div>
                 {expanded === shot.id ? (
@@ -119,6 +124,9 @@ export default function ShotsPage() {
                   <Row label="Pipe" value={`NPS ${shot.nps}" ${shot.schedule} — ${shot.wallThickness.toFixed(3)}"`} />
                   <Row label="Material" value={shot.material} />
                   <Row label="Technique" value={shot.technique} />
+                  {shot.shootingTechnique && (
+                    <Row label="Shooting Technique" value={shot.shootingTechnique === "DWSI" ? "DWSI — 2× wall (source outside)" : "SWSI — 1× wall (source inside)"} />
+                  )}
                   <Row label="SFD" value={`${shot.sfd}"`} />
                   <Separator />
                   <Row label="Source" value={`${shot.sourceType} — ${shot.sourceActivityCi} Ci`} />
@@ -180,6 +188,7 @@ function NewShotForm({ onSave }: { onSave: (shot: ReferenceShot) => void }) {
   const [wallOverride, setWallOverride] = useState("");
   const [material, setMaterial] = useState("Carbon Steel");
   const [technique, setTechnique] = useState<Technique>("SWE/SWV");
+  const [shootingTechnique, setShootingTechnique] = useState<ShootingTechnique>("SWSI");
   const [sfd, setSfd] = useState("36");
   const [sourceType, setSourceType] = useState<SourceType>(settings.pinnedSourceType);
   const [sourceActivity, setSourceActivity] = useState(String(settings.pinnedSourceActivityCi));
@@ -209,6 +218,7 @@ function NewShotForm({ onSave }: { onSave: (shot: ReferenceShot) => void }) {
       wallThickness,
       material,
       technique,
+      shootingTechnique,
       sfd: parseFloat(sfd) || 0,
       sourceType,
       sourceActivityCi: actCi,
@@ -316,6 +326,36 @@ function NewShotForm({ onSave }: { onSave: (shot: ReferenceShot) => void }) {
             onChange={(e) => setSfd(e.target.value)}
             className="h-12 text-base tabular-nums input-dark"
           />
+        </div>
+      </div>
+
+      {/* Shooting Technique Toggle */}
+      <div>
+        <Label className="text-xs text-muted-foreground mb-2 block uppercase tracking-wide">Shooting Technique</Label>
+        <div className="grid grid-cols-2 gap-2">
+          {(["SWSI", "DWSI"] as ShootingTechnique[]).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setShootingTechnique(t)}
+              className={`p-3 rounded-xl border text-left transition-all duration-200 ${
+                shootingTechnique === t
+                  ? t === "DWSI"
+                    ? "bg-amber-900/30 border-amber-500/50"
+                    : "bg-emerald-900/30 border-emerald-500/50"
+                  : "border-white/[0.06] bg-white/[0.02]"
+              }`}
+            >
+              <p className={`font-bold text-sm ${
+                shootingTechnique === t
+                  ? t === "DWSI" ? "text-amber-300" : "text-emerald-300"
+                  : "text-muted-foreground"
+              }`}>{t}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {t === "SWSI" ? "Source inside — 1× wall" : "Source outside — 2× wall"}
+              </p>
+            </button>
+          ))}
         </div>
       </div>
 

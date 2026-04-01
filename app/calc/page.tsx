@@ -9,11 +9,11 @@ import CiSecCalc from "@/components/calc/CiSecCalc";
 import ShotTimeCalc from "@/components/calc/ShotTimeCalc";
 
 const TABS = [
-  { key: "decay", label: "Decay" },
-  { key: "ug", label: "Ug" },
-  { key: "isl", label: "ISL" },
-  { key: "cisec", label: "CI·sec" },
-  { key: "shottime", label: "Shot Time" },
+  { key: "decay",    label: "Decay",     desc: "Activity" },
+  { key: "ug",       label: "Ug",        desc: "Sharpness" },
+  { key: "isl",      label: "ISL",       desc: "Correction" },
+  { key: "cisec",    label: "CI·sec",    desc: "Dose" },
+  { key: "shottime", label: "Shot Time", desc: "Exposure" },
 ] as const;
 
 type CalcTab = (typeof TABS)[number]["key"];
@@ -24,23 +24,21 @@ export default function CalcPage() {
   return (
     <div>
       {/* Header */}
-      <div className="px-4 pt-4 pb-2">
+      <div className="px-4 pt-4 pb-3">
         <h1 className="text-xl font-bold tracking-tight">Calculators</h1>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {TABS.find(t => t.key === tab)?.desc}
+        </p>
       </div>
 
-      {/* Tab Bar */}
-      <div className="px-4 pb-2">
-        <div className="flex gap-1 p-1 rounded-xl" style={{ backgroundColor: "rgba(255,255,255,0.04)" }}>
+      {/* Scrollable Tab Bar */}
+      <div className="px-4 pb-3 calc-tabs-scroll">
+        <div className="calc-tabs-inner">
           {TABS.map(({ key, label }) => (
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={cn(
-                "flex-1 py-2.5 text-xs font-medium transition-all duration-200 rounded-lg min-h-0",
-                tab === key
-                  ? "text-white bg-blue-500/20 shadow-sm shadow-blue-500/10"
-                  : "text-muted-foreground hover:text-foreground hover:bg-white/[0.03]"
-              )}
+              className={cn("calc-tab", tab === key && "calc-tab-active")}
             >
               {label}
             </button>
@@ -49,11 +47,13 @@ export default function CalcPage() {
       </div>
 
       {/* Content */}
-      {tab === "decay" && <DecayCalc />}
-      {tab === "ug" && <UgCalc />}
-      {tab === "isl" && <IslCalc />}
-      {tab === "cisec" && <CiSecCalc />}
-      {tab === "shottime" && <ShotTimeCalc />}
+      <div>
+        {tab === "decay"    && <DecayCalc />}
+        {tab === "ug"       && <UgCalc />}
+        {tab === "isl"      && <IslCalc />}
+        {tab === "cisec"    && <CiSecCalc />}
+        {tab === "shottime" && <ShotTimeCalc />}
+      </div>
     </div>
   );
 }
