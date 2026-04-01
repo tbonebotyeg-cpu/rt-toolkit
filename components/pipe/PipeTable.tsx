@@ -80,7 +80,7 @@ export default function PipeTable() {
             <SelectTrigger className="h-14 text-base input-dark px-3 w-full">
               <SelectValue placeholder="Select NPS" />
             </SelectTrigger>
-            <SelectContent className="select-dropdown">
+            <SelectContent className="select-dropdown !w-[calc(100vw-1rem)]" align="start">
               {PIPE_SCHEDULES.map((p) => (
                 <SelectItem key={p.nps} value={p.nps} className="text-base py-3.5">
                   NPS {p.npsDisplay} — OD {p.od.toFixed(3)}&quot;
@@ -96,7 +96,7 @@ export default function PipeTable() {
             <SelectTrigger className="h-14 text-base input-dark px-3 w-full">
               <SelectValue placeholder="Select" />
             </SelectTrigger>
-            <SelectContent className="select-dropdown">
+            <SelectContent className="select-dropdown !w-[calc(100vw-1rem)]" align="end">
               {sortedSchedules.map((s) => (
                 <SelectItem key={s.schedule} value={s.schedule} className="text-base py-3.5">
                   {s.schedule} — {s.wall.toFixed(3)}&quot; wall
