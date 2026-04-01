@@ -77,7 +77,7 @@ export default function PipeTable() {
         <div>
           <label className="section-label block mb-2 px-1">Pipe Size (NPS)</label>
           <Select value={selectedNps} onValueChange={handleNpsChange}>
-            <SelectTrigger className="h-14 text-base input-dark px-3 w-full">
+            <SelectTrigger className="h-14 text-base input-dark px-3 w-full [&_[data-slot=select-value]]:justify-center [&_[data-slot=select-value]]:text-center">
               <SelectValue placeholder="Select NPS" />
             </SelectTrigger>
             <SelectContent className="select-dropdown !w-[calc(100vw-1rem)]" align="start">
@@ -93,7 +93,7 @@ export default function PipeTable() {
         <div>
           <label className="section-label block mb-2 px-1">Schedule</label>
           <Select value={selectedSchedule} onValueChange={(v) => v && setSelectedSchedule(v)}>
-            <SelectTrigger className="h-14 text-base input-dark px-3 w-full">
+            <SelectTrigger className="h-14 text-base input-dark px-3 w-full [&_[data-slot=select-value]]:justify-center [&_[data-slot=select-value]]:text-center">
               <SelectValue placeholder="Select" />
             </SelectTrigger>
             <SelectContent className="select-dropdown !w-[calc(100vw-1rem)]" align="end">
