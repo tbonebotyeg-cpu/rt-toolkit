@@ -67,8 +67,7 @@ export default function PipeTable() {
     const filmSet = wireSetLabel(filmWire);
     const sourceWireData = getWireDiam(sourceWire);
     const filmWireData = getWireDiam(filmWire);
-    const showWire6Note = sourceWire === 6 || filmWire === 6;
-    return { wall, od, id, sourceWire, filmWire, sourceSet, filmSet, sourceWireData, filmWireData, showWire6Note };
+    return { wall, od, id, sourceWire, filmWire, sourceSet, filmSet, sourceWireData, filmWireData };
   }, [pipe, entry]);
 
   return (
@@ -220,16 +219,6 @@ export default function PipeTable() {
               </div>
             </div>
 
-            {/* Wire 6 Note */}
-            {derived.showWire6Note && (
-              <div className="mt-3 rounded-lg border border-yellow-600/40 bg-yellow-950/25 px-4 py-3 flex gap-2.5 items-start">
-                <span className="text-yellow-400 text-base leading-none mt-0.5 flex-shrink-0">⚠</span>
-                <p className="text-xs text-yellow-200 leading-relaxed">
-                  <span className="font-semibold">Wire 6 Note:</span> Always use Wire 6 on a{" "}
-                  <span className="font-semibold text-yellow-300">B-side IQI</span> vs an A-side penny, even though both carry Wire 6.
-                </p>
-              </div>
-            )}
           </div>
 
           {/* Footer note */}
