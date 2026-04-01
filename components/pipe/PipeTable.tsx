@@ -147,10 +147,11 @@ export default function PipeTable() {
                 Wall
               </p>
               <p className="tabular-nums font-black text-white leading-none" style={{ fontSize: "1.5rem" }}>
-                {derived.wall.toFixed(3)}&quot;
+                {(derived.wall * 25.4).toFixed(2)}
               </p>
+              <p className="tabular-nums text-[10px] text-muted-foreground mt-0.5 font-medium">mm</p>
               <p className="tabular-nums text-xs text-blue-300 mt-1.5 font-medium">
-                {(derived.wall * 25.4).toFixed(2)} mm
+                {derived.wall.toFixed(3)}&quot;
               </p>
             </div>
 
@@ -160,10 +161,11 @@ export default function PipeTable() {
                 OD
               </p>
               <p className="tabular-nums font-black text-white leading-none" style={{ fontSize: "1.5rem" }}>
-                {derived.od.toFixed(3)}&quot;
+                {(derived.od * 25.4).toFixed(2)}
               </p>
+              <p className="tabular-nums text-[10px] text-muted-foreground mt-0.5 font-medium">mm</p>
               <p className="tabular-nums text-xs text-blue-300 mt-1.5 font-medium">
-                {(derived.od * 25.4).toFixed(2)} mm
+                {derived.od.toFixed(3)}&quot;
               </p>
             </div>
 
@@ -173,10 +175,11 @@ export default function PipeTable() {
                 ID
               </p>
               <p className="tabular-nums font-black text-white leading-none" style={{ fontSize: "1.5rem" }}>
-                {derived.id.toFixed(3)}&quot;
+                {(derived.id * 25.4).toFixed(2)}
               </p>
+              <p className="tabular-nums text-[10px] text-muted-foreground mt-0.5 font-medium">mm</p>
               <p className="tabular-nums text-xs text-blue-300 mt-1.5 font-medium">
-                {(derived.id * 25.4).toFixed(2)} mm
+                {derived.id.toFixed(3)}&quot;
               </p>
             </div>
           </div>
@@ -200,8 +203,8 @@ export default function PipeTable() {
                 </p>
                 {derived.sourceWireData && (
                   <p className="text-[11px] text-muted-foreground tabular-nums mt-2">
-                    ∅ {derived.sourceWireData.diameterIn.toFixed(4)}&quot;
-                    {" / "}{derived.sourceWireData.diameterMm.toFixed(2)} mm
+                    ∅ {derived.sourceWireData.diameterMm.toFixed(2)} mm
+                    {" / "}{derived.sourceWireData.diameterIn.toFixed(4)}&quot;
                   </p>
                 )}
               </div>}
@@ -219,8 +222,8 @@ export default function PipeTable() {
                 </p>
                 {derived.filmWireData && (
                   <p className="text-[11px] text-muted-foreground tabular-nums mt-2">
-                    ∅ {derived.filmWireData.diameterIn.toFixed(4)}&quot;
-                    {" / "}{derived.filmWireData.diameterMm.toFixed(2)} mm
+                    ∅ {derived.filmWireData.diameterMm.toFixed(2)} mm
+                    {" / "}{derived.filmWireData.diameterIn.toFixed(4)}&quot;
                   </p>
                 )}
               </div>}
@@ -230,7 +233,7 @@ export default function PipeTable() {
 
           {/* Footer note */}
           <p className="text-[10px] text-muted-foreground/60 border-t border-white/[0.04] pt-3 leading-relaxed">
-            IQI based on nominal single-wall (parent material) thickness only — weld reinforcement and backing rings excluded per ASME V T-274.2
+            IQI based on nominal single-wall (parent material) thickness only — weld reinforcement and backing rings excluded per ASME V T-277.2
           </p>
         </div>
       )}
