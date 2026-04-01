@@ -73,30 +73,29 @@ export default function PipeTable() {
 
   return (
     <div className="p-4 space-y-4">
-      {/* NPS Dropdown */}
-      <div>
-        <label className="section-label block mb-2">Pipe Size (NPS)</label>
-        <Select value={selectedNps} onValueChange={handleNpsChange}>
-          <SelectTrigger className="h-14 text-base input-dark px-4">
-            <SelectValue placeholder="Select NPS size" />
-          </SelectTrigger>
-          <SelectContent className="select-dropdown">
-            {PIPE_SCHEDULES.map((p) => (
-              <SelectItem key={p.nps} value={p.nps} className="text-base py-3.5">
-                NPS {p.npsDisplay} — OD {p.od.toFixed(3)}&quot;
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Dropdowns — side by side */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="section-label block mb-2">Pipe Size (NPS)</label>
+          <Select value={selectedNps} onValueChange={handleNpsChange}>
+            <SelectTrigger className="h-14 text-base input-dark px-3">
+              <SelectValue placeholder="Select NPS" />
+            </SelectTrigger>
+            <SelectContent className="select-dropdown">
+              {PIPE_SCHEDULES.map((p) => (
+                <SelectItem key={p.nps} value={p.nps} className="text-base py-3.5">
+                  NPS {p.npsDisplay} — OD {p.od.toFixed(3)}&quot;
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-      {/* Schedule Dropdown */}
-      {pipe && (
         <div>
           <label className="section-label block mb-2">Schedule</label>
           <Select value={selectedSchedule} onValueChange={(v) => v && setSelectedSchedule(v)}>
-            <SelectTrigger className="h-14 text-base input-dark px-4">
-              <SelectValue placeholder="Select schedule" />
+            <SelectTrigger className="h-14 text-base input-dark px-3">
+              <SelectValue placeholder="Select" />
             </SelectTrigger>
             <SelectContent className="select-dropdown">
               {sortedSchedules.map((s) => (
@@ -107,7 +106,7 @@ export default function PipeTable() {
             </SelectContent>
           </Select>
         </div>
-      )}
+      </div>
 
       {/* Info Card */}
       {derived && entry && pipe && (
