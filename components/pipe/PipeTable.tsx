@@ -71,13 +71,13 @@ export default function PipeTable() {
   }, [pipe, entry]);
 
   return (
-    <div className="p-4 space-y-4">
-      {/* Dropdowns — side by side */}
-      <div className="grid grid-cols-2 gap-3">
+    <div className="space-y-4">
+      {/* Dropdowns — side by side, edge to edge */}
+      <div className="grid grid-cols-2 gap-2 pt-4 px-2">
         <div>
-          <label className="section-label block mb-2">Pipe Size (NPS)</label>
+          <label className="section-label block mb-2 px-1">Pipe Size (NPS)</label>
           <Select value={selectedNps} onValueChange={handleNpsChange}>
-            <SelectTrigger className="h-14 text-base input-dark px-3">
+            <SelectTrigger className="h-14 text-base input-dark px-3 w-full">
               <SelectValue placeholder="Select NPS" />
             </SelectTrigger>
             <SelectContent className="select-dropdown">
@@ -91,9 +91,9 @@ export default function PipeTable() {
         </div>
 
         <div>
-          <label className="section-label block mb-2">Schedule</label>
+          <label className="section-label block mb-2 px-1">Schedule</label>
           <Select value={selectedSchedule} onValueChange={(v) => v && setSelectedSchedule(v)}>
-            <SelectTrigger className="h-14 text-base input-dark px-3">
+            <SelectTrigger className="h-14 text-base input-dark px-3 w-full">
               <SelectValue placeholder="Select" />
             </SelectTrigger>
             <SelectContent className="select-dropdown">
@@ -109,7 +109,7 @@ export default function PipeTable() {
 
       {/* Info Card */}
       {derived && entry && pipe && (
-        <div className="glass-card-elevated gradient-border rounded-xl p-5 space-y-5 animate-result">
+        <div className="mx-4 glass-card-elevated gradient-border rounded-xl p-5 space-y-5 animate-result">
 
           {/* Header */}
           <div className="flex items-center justify-between">
@@ -230,7 +230,7 @@ export default function PipeTable() {
 
       {/* Prompt when no schedule selected */}
       {pipe && !entry && (
-        <div className="rounded-xl border border-white/[0.06] glass-card p-6 text-center">
+        <div className="mx-4 rounded-xl border border-white/[0.06] glass-card p-6 text-center">
           <p className="text-muted-foreground text-sm">Select a schedule to see wall thickness and IQI wire data.</p>
         </div>
       )}
