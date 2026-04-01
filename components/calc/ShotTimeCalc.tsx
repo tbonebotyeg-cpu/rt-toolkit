@@ -240,71 +240,8 @@ export default function ShotTimeCalc() {
       {/* ───── Manual / Exposure Chart Mode ───── */}
       {mode === "manual" && (
         <div className="space-y-4">
-          {/* Formula */}
-          <div className="formula-box">
-            <p className="text-xs text-muted-foreground font-mono">
-              T = (CI·sec<sub>chart</sub> / (A × 60)) × (SFD / {CHART_REF_SFD})² × R
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Built-in chart (steel, density ~2.0). Ref SFD = {CHART_REF_SFD}&quot;
-            </p>
-          </div>
-
-          {/* ── Shooting Technique Toggle ── */}
-          <div>
-            <Label className="text-xs text-muted-foreground mb-2 block uppercase tracking-wide">
-              Shooting Technique
-            </Label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setShootingTechnique("SWSI")}
-                className={cn(
-                  "p-4 rounded-xl border text-left transition-all duration-200",
-                  shootingTechnique === "SWSI"
-                    ? "bg-emerald-900/30 border-emerald-500/50"
-                    : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]"
-                )}
-              >
-                <p className={cn(
-                  "font-bold text-base tracking-wide",
-                  shootingTechnique === "SWSI" ? "text-emerald-300" : "text-muted-foreground"
-                )}>SWSI</p>
-                <p className={cn(
-                  "text-xs mt-0.5 font-medium",
-                  shootingTechnique === "SWSI" ? "text-emerald-400/80" : "text-muted-foreground/70"
-                )}>Source Inside</p>
-                <p className={cn(
-                  "text-[10px] mt-1 tabular-nums",
-                  shootingTechnique === "SWSI" ? "text-emerald-500/70" : "text-muted-foreground/50"
-                )}>1× wall thickness</p>
-              </button>
-              <button
-                onClick={() => setShootingTechnique("DWSI")}
-                className={cn(
-                  "p-4 rounded-xl border text-left transition-all duration-200",
-                  shootingTechnique === "DWSI"
-                    ? "bg-amber-900/30 border-amber-500/50"
-                    : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]"
-                )}
-              >
-                <p className={cn(
-                  "font-bold text-base tracking-wide",
-                  shootingTechnique === "DWSI" ? "text-amber-300" : "text-muted-foreground"
-                )}>DWSI</p>
-                <p className={cn(
-                  "text-xs mt-0.5 font-medium",
-                  shootingTechnique === "DWSI" ? "text-amber-400/80" : "text-muted-foreground/70"
-                )}>Source Outside</p>
-                <p className={cn(
-                  "text-[10px] mt-1 tabular-nums",
-                  shootingTechnique === "DWSI" ? "text-amber-500/70" : "text-muted-foreground/50"
-                )}>2× wall thickness</p>
-              </button>
-            </div>
-          </div>
-
-          {/* Source + NPS + Schedule */}
-          <div className="grid grid-cols-3 gap-3">
+          {/* Source + Shooting Technique */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">Source</Label>
               <Select value={sourceType} onValueChange={(v) => v && setSourceType(v as SourceType)}>
@@ -317,6 +254,22 @@ export default function ShotTimeCalc() {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">Shooting Technique</Label>
+              <Select value={shootingTechnique} onValueChange={(v) => v && setShootingTechnique(v as ShootingTechnique)}>
+                <SelectTrigger className="h-12 input-dark">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="select-dropdown">
+                  <SelectItem value="SWSI" className="py-3">SWSI</SelectItem>
+                  <SelectItem value="DWSI" className="py-3">DWSI</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* NPS + Schedule */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">NPS</Label>
               <Select value={nps} onValueChange={(v) => v && setNps(v)}>

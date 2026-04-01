@@ -329,40 +329,10 @@ function NewShotForm({ onSave }: { onSave: (shot: ReferenceShot) => void }) {
         </div>
       </div>
 
-      {/* Shooting Technique Toggle */}
-      <div>
-        <Label className="text-xs text-muted-foreground mb-2 block uppercase tracking-wide">Shooting Technique</Label>
-        <div className="grid grid-cols-2 gap-2">
-          {(["SWSI", "DWSI"] as ShootingTechnique[]).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setShootingTechnique(t)}
-              className={`p-3 rounded-xl border text-left transition-all duration-200 ${
-                shootingTechnique === t
-                  ? t === "DWSI"
-                    ? "bg-amber-900/30 border-amber-500/50"
-                    : "bg-emerald-900/30 border-emerald-500/50"
-                  : "border-white/[0.06] bg-white/[0.02]"
-              }`}
-            >
-              <p className={`font-bold text-sm ${
-                shootingTechnique === t
-                  ? t === "DWSI" ? "text-amber-300" : "text-emerald-300"
-                  : "text-muted-foreground"
-              }`}>{t}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                {t === "SWSI" ? "Source inside — 1× wall" : "Source outside — 2× wall"}
-              </p>
-            </button>
-          ))}
-        </div>
-      </div>
-
       <Separator />
 
-      {/* Source */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* Source + Shooting Technique */}
+      <div className="grid grid-cols-2 gap-3">
         <div>
           <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">Source</Label>
           <Select value={sourceType} onValueChange={(v) => v && setSourceType(v as SourceType)}>
@@ -375,6 +345,22 @@ function NewShotForm({ onSave }: { onSave: (shot: ReferenceShot) => void }) {
             </SelectContent>
           </Select>
         </div>
+        <div>
+          <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">Shooting Technique</Label>
+          <Select value={shootingTechnique} onValueChange={(v) => v && setShootingTechnique(v as ShootingTechnique)}>
+            <SelectTrigger className="h-12 input-dark">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="select-dropdown">
+              <SelectItem value="SWSI" className="py-3">SWSI</SelectItem>
+              <SelectItem value="DWSI" className="py-3">DWSI</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Activity + Source Date */}
+      <div className="grid grid-cols-2 gap-3">
         <div>
           <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">Activity (Ci)</Label>
           <Input

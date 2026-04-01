@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AppSettings, FilmTypeSetting, SourceType } from "@/types";
+import { AppSettings, Camera, FilmTypeSetting, SourceType } from "@/types";
 import { loadSettings, saveSettings, resetAllData } from "@/lib/storage/settings";
 import { loadFilms, addFilm, updateFilm, deleteFilm } from "@/lib/storage/films";
+import { loadCameras, saveCamera, deleteCamera } from "@/lib/storage/cameras";
 import { generateId } from "@/lib/storage/shots";
 import { calculateDecay, formatActivity } from "@/lib/calculations/decay";
 import { Input } from "@/components/ui/input";
@@ -14,42 +15,58 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Trash2, Plus, Star, Pencil, Atom, Film, Sliders, Database, CheckCircle } from "lucide-react";
+import { Trash2, Plus, Star, Pencil, Film, Sliders, Database, CheckCircle, Video } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [cameras, setCameras] = useState<Camera[]>([]);
   const [films, setFilms] = useState<FilmTypeSetting[]>([]);
   const [saved, setSaved] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [filmSheetOpen, setFilmSheetOpen] = useState(false);
   const [editingFilm, setEditingFilm] = useState<FilmTypeSetting | null>(null);
-
-  // Derived: today's decayed activity
-  const [todayActivity, setTodayActivity] = useState<number | null>(null);
+  const [cameraSheetOpen, setCameraSheetOpen] = useState(false);
+  const [editingCamera, setEditingCamera] = useState<Camera | null>(null);
 
   useEffect(() => {
     const s = loadSettings();
     setSettings(s);
+    setCameras(loadCameras());
     setFilms(loadFilms());
-    computeToday(s);
   }, []);
 
-  function computeToday(s: AppSettings) {
+  const selectedCamera = cameras.find((c) => c.id === settings?.pinnedCameraId) ?? null;
+
+  const todayActivity = (() => {
+    if (!selectedCamera) return null;
     try {
-      const calDate = new Date(s.pinnedSourceCalDate);
+      const calDate = new Date(selectedCamera.calDate);
       const today = new Date();
-      if (!isNaN(calDate.getTime()) && s.pinnedSourceActivityCi > 0) {
-        const res = calculateDecay(s.pinnedSourceActivityCi, calDate, today, s.pinnedSourceType);
-        setTodayActivity(res.activityAtTarget);
+      if (!isNaN(calDate.getTime()) && selectedCamera.calActivityCi > 0) {
+        return calculateDecay(selectedCamera.calActivityCi, calDate, today, selectedCamera.sourceType).activityAtTarget;
       }
     } catch { /* noop */ }
+    return null;
+  })();
+
+  function pinCamera(cameraId: string) {
+    if (!settings) return;
+    const cam = cameras.find((c) => c.id === cameraId);
+    const updated: AppSettings = {
+      ...settings,
+      pinnedCameraId: cameraId,
+      cameraSerial: cam?.serial ?? settings.cameraSerial,
+      pinnedSourceType: cam?.sourceType ?? settings.pinnedSourceType,
+      pinnedSourceActivityCi: cam?.calActivityCi ?? settings.pinnedSourceActivityCi,
+      pinnedSourceCalDate: cam?.calDate ?? settings.pinnedSourceCalDate,
+    };
+    setSettings(updated);
   }
 
   function handleSave() {
     if (!settings) return;
     saveSettings(settings);
-    computeToday(settings);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   }
@@ -58,8 +75,8 @@ export default function SettingsPage() {
     resetAllData();
     const s = loadSettings();
     setSettings(s);
+    setCameras(loadCameras());
     setFilms(loadFilms());
-    computeToday(s);
     setConfirmReset(false);
   }
 
@@ -85,9 +102,27 @@ export default function SettingsPage() {
     setEditingFilm(null);
   }
 
-  function updateSettings(partial: Partial<AppSettings>) {
-    if (!settings) return;
-    setSettings({ ...settings, ...partial });
+  function handleSaveCamera(camera: Camera) {
+    saveCamera(camera);
+    const updated = loadCameras();
+    setCameras(updated);
+    // Auto-pin if first camera or was already pinned
+    if (updated.length === 1 || settings?.pinnedCameraId === camera.id) {
+      pinCamera(camera.id);
+    }
+    setCameraSheetOpen(false);
+    setEditingCamera(null);
+  }
+
+  function handleDeleteCamera(id: string) {
+    deleteCamera(id);
+    const updated = loadCameras();
+    setCameras(updated);
+    if (settings?.pinnedCameraId === id) {
+      const next = updated[0];
+      if (next) pinCamera(next.id);
+      else if (settings) setSettings({ ...settings, pinnedCameraId: "" });
+    }
   }
 
   if (!settings) return null;
@@ -103,102 +138,118 @@ export default function SettingsPage() {
       {/* Header */}
       <div className="pt-2">
         <h1 className="text-xl font-bold tracking-tight">Settings</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Source, film, and preferences</p>
+        <p className="text-xs text-muted-foreground mt-0.5">Cameras, film, and preferences</p>
       </div>
 
-      {/* ── Source Configuration ── */}
+      {/* ── Cameras ── */}
       <section className="space-y-2.5">
-        <div className="section-heading">
-          <Atom size={12} className="text-blue-400 opacity-100 mr-[-2px]" />
-          Source Configuration
+        <div className="flex items-center justify-between">
+          <div className="section-heading">
+            <Video size={12} className="text-blue-400 opacity-100 mr-[-2px]" />
+            Cameras
+          </div>
+          <Sheet open={cameraSheetOpen} onOpenChange={(open) => {
+            setCameraSheetOpen(open);
+            if (!open) setEditingCamera(null);
+          }}>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="gap-1.5 h-9"
+              onClick={() => { setEditingCamera(null); setCameraSheetOpen(true); }}
+            >
+              <Plus size={14} />
+              Add Camera
+            </Button>
+            <SheetContent side="bottom" className="h-[85vh] overflow-y-auto sheet-bg">
+              <SheetHeader>
+                <SheetTitle>{editingCamera ? "Edit Camera" : "Add Camera"}</SheetTitle>
+              </SheetHeader>
+              <CameraForm
+                key={editingCamera?.id ?? "new"}
+                initial={editingCamera}
+                onSave={handleSaveCamera}
+              />
+            </SheetContent>
+          </Sheet>
         </div>
 
-        <div className="glass-card-elevated rounded-2xl overflow-hidden">
-          {/* Today's activity banner */}
-          {todayActivity !== null && (
-            <div className="px-4 py-3 border-b border-white/[0.05]"
-              style={{ background: "linear-gradient(135deg, rgba(18,18,32,0.9), rgba(14,14,24,0.95))" }}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Today&apos;s Activity</p>
-                  <p className={cn("text-2xl font-extrabold tabular-nums", activityColor)}>
-                    {formatActivity(todayActivity)}
-                  </p>
+        {cameras.length === 0 ? (
+          <div className="empty-state">
+            <Video size={24} className="text-muted-foreground/30 mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">No cameras configured</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">Tap &quot;Add Camera&quot; to get started.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {/* Selected camera activity banner */}
+            {selectedCamera && todayActivity !== null && (
+              <div className="glass-card-elevated rounded-2xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-white/[0.05]"
+                  style={{ background: "linear-gradient(135deg, rgba(18,18,32,0.9), rgba(14,14,24,0.95))" }}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Today&apos;s Activity</p>
+                      <p className={cn("text-2xl font-extrabold tabular-nums", activityColor)}>
+                        {formatActivity(todayActivity)}
+                      </p>
+                    </div>
+                    <div className="text-right space-y-1">
+                      <Badge className={cn(
+                        "text-xs font-bold",
+                        selectedCamera.sourceType === "Ir-192"
+                          ? "bg-blue-900/60 text-blue-300 border-blue-700/50"
+                          : "bg-purple-900/60 text-purple-300 border-purple-700/50"
+                      )}>
+                        {selectedCamera.sourceType}
+                      </Badge>
+                      <p className="text-[10px] text-muted-foreground tabular-nums">
+                        Fs {selectedCamera.focalSpotMm} mm
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Isotope</p>
-                  <Badge className={cn(
-                    "text-xs font-bold",
-                    settings.pinnedSourceType === "Ir-192"
-                      ? "bg-blue-900/60 text-blue-300 border-blue-700/50"
-                      : "bg-purple-900/60 text-purple-300 border-purple-700/50"
-                  )}>
-                    {settings.pinnedSourceType}
-                  </Badge>
+              </div>
+            )}
+
+            {/* Camera list */}
+            <div className="space-y-2">
+              {cameras.map((cam) => (
+                <div key={cam.id} className={cn(
+                  "glass-card rounded-xl p-3.5",
+                  cam.id === settings.pinnedCameraId && "border border-blue-500/40"
+                )}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <p className="font-semibold text-sm">{cam.serial || "Unnamed"}</p>
+                        {cam.id === settings.pinnedCameraId && (
+                          <Badge className="text-[10px] bg-blue-900/50 text-blue-300 border-blue-700/50">Active</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {cam.sourceType} &middot; {cam.calActivityCi} Ci &middot; Fs {cam.focalSpotMm} mm &middot; Cal {cam.calDate}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-0.5 shrink-0 ml-2">
+                      {cam.id !== settings.pinnedCameraId && (
+                        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => pinCamera(cam.id)} title="Set active">
+                          <Star size={14} className="text-muted-foreground" />
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => { setEditingCamera(cam); setCameraSheetOpen(true); }}>
+                        <Pencil size={14} className="text-muted-foreground" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => handleDeleteCamera(cam.id)}>
+                        <Trash2 size={14} className="text-red-400" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
-
-          <div className="p-4 space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">
-                  Source Type
-                </Label>
-                <Select
-                  value={settings.pinnedSourceType}
-                  onValueChange={(v) => v && updateSettings({ pinnedSourceType: v as SourceType })}
-                >
-                  <SelectTrigger className="h-12 input-dark">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="select-dropdown">
-                    <SelectItem value="Ir-192" className="py-3">Ir-192</SelectItem>
-                    <SelectItem value="Co-60" className="py-3">Co-60</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">
-                  Cal Activity (Ci)
-                </Label>
-                <Input
-                  type="number"
-                  value={settings.pinnedSourceActivityCi}
-                  onChange={(e) => updateSettings({ pinnedSourceActivityCi: parseFloat(e.target.value) || 0 })}
-                  placeholder="100"
-                  className="h-12 text-base tabular-nums input-dark"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">
-                  Cal Date
-                </Label>
-                <Input
-                  type="date"
-                  value={settings.pinnedSourceCalDate}
-                  onChange={(e) => updateSettings({ pinnedSourceCalDate: e.target.value })}
-                  className="h-12 input-dark"
-                />
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">
-                  Camera S/N
-                </Label>
-                <Input
-                  value={settings.cameraSerial}
-                  onChange={(e) => updateSettings({ cameraSerial: e.target.value })}
-                  placeholder="e.g. IR-2045"
-                  className="h-12 input-dark"
-                />
-              </div>
+              ))}
             </div>
           </div>
-        </div>
+        )}
       </section>
 
       {/* ── Display Preferences ── */}
@@ -215,7 +266,7 @@ export default function SettingsPage() {
           <Select
             value={settings.unitsPreference}
             onValueChange={(v) =>
-              v && updateSettings({ unitsPreference: v as "imperial" | "metric" })
+              v && setSettings({ ...settings, unitsPreference: v as "imperial" | "metric" })
             }
           >
             <SelectTrigger className="h-12 input-dark">
@@ -375,7 +426,7 @@ export default function SettingsPage() {
                 <DialogTitle>Reset All Data?</DialogTitle>
               </DialogHeader>
               <p className="text-sm text-muted-foreground">
-                All shots, film types, and settings will be permanently deleted. This cannot be undone.
+                All shots, film types, cameras, and settings will be permanently deleted. This cannot be undone.
               </p>
               <div className="flex gap-3 mt-4">
                 <Button
@@ -397,6 +448,96 @@ export default function SettingsPage() {
           </Dialog>
         </div>
       </section>
+    </div>
+  );
+}
+
+function CameraForm({
+  initial,
+  onSave,
+}: {
+  initial: Camera | null;
+  onSave: (camera: Camera) => void;
+}) {
+  const [serial, setSerial] = useState(initial?.serial ?? "");
+  const [sourceType, setSourceType] = useState<SourceType>(initial?.sourceType ?? "Ir-192");
+  const [calActivity, setCalActivity] = useState(String(initial?.calActivityCi ?? "100"));
+  const [calDate, setCalDate] = useState(initial?.calDate ?? new Date().toISOString().split("T")[0]);
+  const [focalSpot, setFocalSpot] = useState(String(initial?.focalSpotMm ?? "3.0"));
+
+  function handleSubmit() {
+    onSave({
+      id: initial?.id ?? generateId(),
+      serial,
+      sourceType,
+      calActivityCi: parseFloat(calActivity) || 0,
+      calDate,
+      focalSpotMm: parseFloat(focalSpot) || 3.0,
+    });
+  }
+
+  return (
+    <div className="space-y-4 pt-4">
+      <div>
+        <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">Camera Serial Number</Label>
+        <Input
+          value={serial}
+          onChange={(e) => setSerial(e.target.value)}
+          placeholder="e.g. IR-2045"
+          className="h-12 input-dark"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">Source Type</Label>
+          <Select value={sourceType} onValueChange={(v) => v && setSourceType(v as SourceType)}>
+            <SelectTrigger className="h-12 input-dark">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="select-dropdown">
+              <SelectItem value="Ir-192" className="py-3">Ir-192</SelectItem>
+              <SelectItem value="Co-60" className="py-3">Co-60</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">Focal Spot (mm)</Label>
+          <Input
+            type="number"
+            value={focalSpot}
+            onChange={(e) => setFocalSpot(e.target.value)}
+            placeholder="3.0"
+            className="h-12 text-base tabular-nums input-dark"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">Cal Activity (Ci)</Label>
+          <Input
+            type="number"
+            value={calActivity}
+            onChange={(e) => setCalActivity(e.target.value)}
+            placeholder="100"
+            className="h-12 text-base tabular-nums input-dark"
+          />
+        </div>
+        <div>
+          <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">Cal Date</Label>
+          <Input
+            type="date"
+            value={calDate}
+            onChange={(e) => setCalDate(e.target.value)}
+            className="h-12 input-dark"
+          />
+        </div>
+      </div>
+
+      <Button onClick={handleSubmit} className="w-full h-12 text-base font-semibold">
+        {initial ? "Update Camera" : "Add Camera"}
+      </Button>
     </div>
   );
 }

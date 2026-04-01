@@ -90,10 +90,20 @@ export interface FilmTypeSetting {
   isDefault: boolean;
 }
 
+export interface Camera {
+  id: string;
+  serial: string;
+  sourceType: SourceType;
+  calActivityCi: number;
+  calDate: string; // ISO date
+  focalSpotMm: number;
+}
+
 export interface AppSettings {
   pinnedSourceType: SourceType;
   pinnedSourceActivityCi: number;
   pinnedSourceCalDate: string; // ISO date
+  pinnedCameraId: string;
   cameraSerial: string;
   unitsPreference: "imperial" | "metric";
   defaultFilmId: string;

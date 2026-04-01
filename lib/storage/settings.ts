@@ -6,6 +6,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   pinnedSourceType: "Ir-192",
   pinnedSourceActivityCi: 100,
   pinnedSourceCalDate: new Date().toISOString().split("T")[0],
+  pinnedCameraId: "",
   cameraSerial: "",
   unitsPreference: "imperial",
   defaultFilmId: "default-agfa-d7",
@@ -36,4 +37,5 @@ export function resetAllData(): void {
   localStorage.removeItem("rt_toolkit_v1_shots");
   localStorage.removeItem("rt_toolkit_v1_films");
   localStorage.removeItem("rt_toolkit_v1_settings");
+  localStorage.removeItem("rt_cameras");
 }

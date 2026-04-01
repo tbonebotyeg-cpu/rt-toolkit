@@ -87,15 +87,6 @@ export default function UgCalc() {
         </div>
       </div>
 
-      {/* Formula reminder */}
-      <div className="formula-box">
-        <p className="text-xs text-muted-foreground font-mono">
-          Ug = (Fs × t) / D
-        </p>
-        <p className="text-xs text-muted-foreground mt-1">
-          Fs = source size · t = object-to-film dist · D = source-to-object dist (SOD)
-        </p>
-      </div>
 
       {/* Inputs */}
       <div className="space-y-3">

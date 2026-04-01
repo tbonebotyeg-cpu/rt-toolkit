@@ -41,16 +41,6 @@ export default function CiSecCalc() {
 
   return (
     <div className="p-4 space-y-4">
-      {/* Formula reminder */}
-      <div className="formula-box">
-        <p className="text-xs text-muted-foreground font-mono">
-          T₂ = T₁ × (A₁ / A₂)
-        </p>
-        <p className="text-xs text-muted-foreground mt-1">
-          Adjust exposure time when source activity changes. CI·sec = Activity × Time × 60
-        </p>
-      </div>
-
       {/* Original shot */}
       <div className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
