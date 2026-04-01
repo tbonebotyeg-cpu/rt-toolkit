@@ -6,6 +6,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   pinnedSourceType: "Ir-192",
   pinnedSourceActivityCi: 100,
   pinnedSourceCalDate: new Date().toISOString().split("T")[0],
+  cameraSerial: "",
   unitsPreference: "imperial",
   defaultFilmId: "default-agfa-d7",
 };

@@ -16,12 +16,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, BookOpen } from "lucide-react";
 
 export default function ShotsPage() {
   const [shots, setShots] = useState<ReferenceShot[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [formKey, setFormKey] = useState(0);
 
   useEffect(() => {
     setShots(loadShots());
@@ -49,37 +50,42 @@ export default function ShotsPage() {
           </p>
         </div>
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-          <Button size="sm" className="gap-1.5" onClick={() => setSheetOpen(true)}>
+          <Button size="sm" className="gap-1.5" onClick={() => { setFormKey(k => k + 1); setSheetOpen(true); }}>
             <Plus size={16} />
             New
           </Button>
           <SheetContent
             side="bottom"
-            className="h-[90vh] overflow-y-auto"
-            style={{ backgroundColor: "#0f0f14" }}
+            className="h-[90vh] overflow-y-auto sheet-bg"
           >
             <SheetHeader>
               <SheetTitle>Log Reference Shot</SheetTitle>
             </SheetHeader>
-            <NewShotForm onSave={handleAdd} />
+            <NewShotForm key={formKey} onSave={handleAdd} />
           </SheetContent>
         </Sheet>
       </div>
 
       {shots.length === 0 ? (
-        <div className="px-4 py-12 text-center">
-          <p className="text-muted-foreground text-sm">No shots logged yet.</p>
-          <p className="text-muted-foreground text-xs mt-1">
-            Tap &quot;New&quot; to log your first reference exposure.
-          </p>
+        <div className="px-4 py-6">
+          <div className="empty-state">
+            <BookOpen size={32} className="text-muted-foreground/40 mx-auto mb-3" />
+            <p className="text-muted-foreground text-sm font-medium">No shots logged yet</p>
+            <p className="text-muted-foreground/60 text-xs mt-1">
+              Tap &quot;New&quot; to log your first reference exposure.
+            </p>
+          </div>
         </div>
       ) : (
         <div className="px-4 pb-4 space-y-2">
           {shots.map((shot) => (
             <Card
               key={shot.id}
-              className="overflow-hidden"
-              style={{ backgroundColor: "#1a1a24" }}
+              className="overflow-hidden glass-card"
+              style={{
+                borderLeftWidth: "3px",
+                borderLeftColor: shot.sourceType === "Ir-192" ? "rgba(96, 165, 250, 0.5)" : "rgba(168, 85, 247, 0.5)",
+              }}
             >
               <button
                 onClick={() => setExpanded(expanded === shot.id ? null : shot.id)}
@@ -88,7 +94,11 @@ export default function ShotsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="font-semibold text-sm truncate">{shot.name}</p>
-                    <Badge variant="secondary" className="text-[10px] shrink-0">
+                    <Badge className={`text-[10px] shrink-0 ${
+                      shot.sourceType === "Ir-192"
+                        ? "bg-blue-900/60 text-blue-300 border-blue-700/50"
+                        : "bg-purple-900/60 text-purple-300 border-purple-700/50"
+                    }`}>
                       {shot.sourceType}
                     </Badge>
                   </div>
@@ -226,8 +236,7 @@ function NewShotForm({ onSave }: { onSave: (shot: ReferenceShot) => void }) {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder='e.g. "6\" STD Butt Weld"'
-          className="h-12"
-          style={{ backgroundColor: "#1a1a24" }}
+          className="h-12 input-dark"
         />
       </div>
 
@@ -236,10 +245,10 @@ function NewShotForm({ onSave }: { onSave: (shot: ReferenceShot) => void }) {
         <div>
           <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">NPS</Label>
           <Select value={nps} onValueChange={(v) => v && setNps(v)}>
-            <SelectTrigger className="h-12" style={{ backgroundColor: "#1a1a24" }}>
+            <SelectTrigger className="h-12 input-dark">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent style={{ backgroundColor: "#1a1a24" }} className="max-h-60">
+            <SelectContent className="select-dropdown max-h-60">
               {PIPE_SCHEDULES.map((p) => (
                 <SelectItem key={p.nps} value={p.nps} className="py-2">
                   {p.npsDisplay}
@@ -251,10 +260,10 @@ function NewShotForm({ onSave }: { onSave: (shot: ReferenceShot) => void }) {
         <div>
           <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">Schedule</Label>
           <Select value={schedule} onValueChange={(v) => v && setSchedule(v)}>
-            <SelectTrigger className="h-12" style={{ backgroundColor: "#1a1a24" }}>
+            <SelectTrigger className="h-12 input-dark">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent style={{ backgroundColor: "#1a1a24" }} className="max-h-60">
+            <SelectContent className="select-dropdown max-h-60">
               {(pipe?.schedules ?? []).map((s) => (
                 <SelectItem key={s.schedule} value={s.schedule} className="py-2">
                   {s.schedule}
@@ -269,8 +278,7 @@ function NewShotForm({ onSave }: { onSave: (shot: ReferenceShot) => void }) {
             type="number"
             value={wallOverride || (wallThickness ? wallThickness.toFixed(3) : "")}
             onChange={(e) => setWallOverride(e.target.value)}
-            className="h-12 text-base tabular-nums"
-            style={{ backgroundColor: "#1a1a24" }}
+            className="h-12 text-base tabular-nums input-dark"
           />
         </div>
       </div>
@@ -280,8 +288,7 @@ function NewShotForm({ onSave }: { onSave: (shot: ReferenceShot) => void }) {
         <Input
           value={material}
           onChange={(e) => setMaterial(e.target.value)}
-          className="h-12"
-          style={{ backgroundColor: "#1a1a24" }}
+          className="h-12 input-dark"
         />
       </div>
 
@@ -290,10 +297,10 @@ function NewShotForm({ onSave }: { onSave: (shot: ReferenceShot) => void }) {
         <div>
           <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">Technique</Label>
           <Select value={technique} onValueChange={(v) => v && setTechnique(v as Technique)}>
-            <SelectTrigger className="h-12" style={{ backgroundColor: "#1a1a24" }}>
+            <SelectTrigger className="h-12 input-dark">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent style={{ backgroundColor: "#1a1a24" }}>
+            <SelectContent className="select-dropdown">
               <SelectItem value="SWE/SWV" className="py-3">SWE/SWV</SelectItem>
               <SelectItem value="DWE/SWV" className="py-3">DWE/SWV</SelectItem>
               <SelectItem value="DWE/DWV" className="py-3">DWE/DWV</SelectItem>
@@ -307,8 +314,7 @@ function NewShotForm({ onSave }: { onSave: (shot: ReferenceShot) => void }) {
             type="number"
             value={sfd}
             onChange={(e) => setSfd(e.target.value)}
-            className="h-12 text-base tabular-nums"
-            style={{ backgroundColor: "#1a1a24" }}
+            className="h-12 text-base tabular-nums input-dark"
           />
         </div>
       </div>
@@ -320,10 +326,10 @@ function NewShotForm({ onSave }: { onSave: (shot: ReferenceShot) => void }) {
         <div>
           <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">Source</Label>
           <Select value={sourceType} onValueChange={(v) => v && setSourceType(v as SourceType)}>
-            <SelectTrigger className="h-12" style={{ backgroundColor: "#1a1a24" }}>
+            <SelectTrigger className="h-12 input-dark">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent style={{ backgroundColor: "#1a1a24" }}>
+            <SelectContent className="select-dropdown">
               <SelectItem value="Ir-192" className="py-3">Ir-192</SelectItem>
               <SelectItem value="Co-60" className="py-3">Co-60</SelectItem>
             </SelectContent>
@@ -335,8 +341,7 @@ function NewShotForm({ onSave }: { onSave: (shot: ReferenceShot) => void }) {
             type="number"
             value={sourceActivity}
             onChange={(e) => setSourceActivity(e.target.value)}
-            className="h-12 text-base tabular-nums"
-            style={{ backgroundColor: "#1a1a24" }}
+            className="h-12 text-base tabular-nums input-dark"
           />
         </div>
         <div>
@@ -345,8 +350,7 @@ function NewShotForm({ onSave }: { onSave: (shot: ReferenceShot) => void }) {
             type="date"
             value={sourceDate}
             onChange={(e) => setSourceDate(e.target.value)}
-            className="h-12"
-            style={{ backgroundColor: "#1a1a24" }}
+            className="h-12 input-dark"
           />
         </div>
       </div>
@@ -360,8 +364,7 @@ function NewShotForm({ onSave }: { onSave: (shot: ReferenceShot) => void }) {
           type="number"
           value={exposureTime}
           onChange={(e) => setExposureTime(e.target.value)}
-          className="h-12 text-base tabular-nums"
-          style={{ backgroundColor: "#1a1a24" }}
+          className="h-12 text-base tabular-nums input-dark"
         />
       </div>
 
@@ -372,10 +375,10 @@ function NewShotForm({ onSave }: { onSave: (shot: ReferenceShot) => void }) {
         <div>
           <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">Film</Label>
           <Select value={filmType} onValueChange={(v) => v && setFilmType(v)}>
-            <SelectTrigger className="h-12" style={{ backgroundColor: "#1a1a24" }}>
+            <SelectTrigger className="h-12 input-dark">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent style={{ backgroundColor: "#1a1a24" }}>
+            <SelectContent className="select-dropdown">
               {films.map((f) => (
                 <SelectItem key={f.id} value={f.filmName} className="py-2">
                   {f.filmName}
@@ -390,8 +393,7 @@ function NewShotForm({ onSave }: { onSave: (shot: ReferenceShot) => void }) {
             type="number"
             value={devTemp}
             onChange={(e) => setDevTemp(e.target.value)}
-            className="h-12 text-base tabular-nums"
-            style={{ backgroundColor: "#1a1a24" }}
+            className="h-12 text-base tabular-nums input-dark"
           />
         </div>
         <div>
@@ -400,8 +402,7 @@ function NewShotForm({ onSave }: { onSave: (shot: ReferenceShot) => void }) {
             type="number"
             value={devTime}
             onChange={(e) => setDevTime(e.target.value)}
-            className="h-12 text-base tabular-nums"
-            style={{ backgroundColor: "#1a1a24" }}
+            className="h-12 text-base tabular-nums input-dark"
           />
         </div>
       </div>
@@ -414,8 +415,7 @@ function NewShotForm({ onSave }: { onSave: (shot: ReferenceShot) => void }) {
             type="number"
             value={density}
             onChange={(e) => setDensity(e.target.value)}
-            className="h-12 text-base tabular-nums"
-            style={{ backgroundColor: "#1a1a24" }}
+            className="h-12 text-base tabular-nums input-dark"
           />
         </div>
         <div>
@@ -424,8 +424,7 @@ function NewShotForm({ onSave }: { onSave: (shot: ReferenceShot) => void }) {
             value={iqi}
             onChange={(e) => setIqi(e.target.value)}
             placeholder="Set B, Wire #7"
-            className="h-12"
-            style={{ backgroundColor: "#1a1a24" }}
+            className="h-12 input-dark"
           />
         </div>
       </div>
@@ -436,8 +435,7 @@ function NewShotForm({ onSave }: { onSave: (shot: ReferenceShot) => void }) {
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Additional notes..."
-          className="min-h-[80px]"
-          style={{ backgroundColor: "#1a1a24" }}
+          className="min-h-[80px] input-dark"
         />
       </div>
 

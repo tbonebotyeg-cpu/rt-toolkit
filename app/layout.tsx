@@ -31,7 +31,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#0f0f14",
+  themeColor: "#0a0a12",
 };
 
 export default function RootLayout({
@@ -43,9 +43,9 @@ export default function RootLayout({
     <html lang="en" className="dark" style={{ colorScheme: "dark" }}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        style={{ backgroundColor: "#0f0f14", color: "#f2f2f5" }}
+        style={{ backgroundColor: "#0a0a12", color: "#f2f2f5" }}
       >
-        <main className="pb-16 min-h-screen">{children}</main>
+        <main className="pb-20 min-h-screen">{children}</main>
         <BottomNav />
       </body>
     </html>

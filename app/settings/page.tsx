@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AppSettings, SourceType, FilmTypeSetting } from "@/types";
+import { AppSettings, FilmTypeSetting } from "@/types";
 import { loadSettings, saveSettings, resetAllData } from "@/lib/storage/settings";
 import { loadFilms, addFilm, updateFilm, deleteFilm } from "@/lib/storage/films";
 import { generateId } from "@/lib/storage/shots";
@@ -73,66 +73,12 @@ export default function SettingsPage() {
         <h1 className="text-xl font-bold tracking-tight">Settings</h1>
       </div>
 
-      {/* Pinned Source */}
-      <section className="space-y-3">
-        <h2 className="text-xs text-muted-foreground uppercase tracking-wide font-semibold">
-          Pinned Source
-        </h2>
-        <Card className="p-4 space-y-3" style={{ backgroundColor: "#1a1a24" }}>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">
-                Source Type
-              </Label>
-              <Select
-                value={settings.pinnedSourceType}
-                onValueChange={(v) => v && setSettings({ ...settings, pinnedSourceType: v as SourceType })}
-              >
-                <SelectTrigger className="h-12" style={{ backgroundColor: "#12121a" }}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent style={{ backgroundColor: "#1a1a24" }}>
-                  <SelectItem value="Ir-192" className="py-3">Ir-192</SelectItem>
-                  <SelectItem value="Co-60" className="py-3">Co-60</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">
-                Activity (Ci)
-              </Label>
-              <Input
-                type="number"
-                value={settings.pinnedSourceActivityCi}
-                onChange={(e) =>
-                  setSettings({ ...settings, pinnedSourceActivityCi: parseFloat(e.target.value) || 0 })
-                }
-                className="h-12 text-base tabular-nums"
-                style={{ backgroundColor: "#12121a" }}
-              />
-            </div>
-          </div>
-          <div>
-            <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">
-              Calibration Date
-            </Label>
-            <Input
-              type="date"
-              value={settings.pinnedSourceCalDate}
-              onChange={(e) => setSettings({ ...settings, pinnedSourceCalDate: e.target.value })}
-              className="h-12 text-base"
-              style={{ backgroundColor: "#12121a" }}
-            />
-          </div>
-        </Card>
-      </section>
-
       {/* Units */}
       <section className="space-y-3">
-        <h2 className="text-xs text-muted-foreground uppercase tracking-wide font-semibold">
+        <h2 className="section-label">
           Preferences
         </h2>
-        <Card className="p-4" style={{ backgroundColor: "#1a1a24" }}>
+        <Card className="p-4 glass-card">
           <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">
             Default Units
           </Label>
@@ -142,10 +88,10 @@ export default function SettingsPage() {
               v && setSettings({ ...settings, unitsPreference: v as "imperial" | "metric" })
             }
           >
-            <SelectTrigger className="h-12" style={{ backgroundColor: "#12121a" }}>
+            <SelectTrigger className="h-12 input-dark">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent style={{ backgroundColor: "#1a1a24" }}>
+            <SelectContent className="select-dropdown">
               <SelectItem value="imperial" className="py-3">Imperial (inches)</SelectItem>
               <SelectItem value="metric" className="py-3">Metric (mm)</SelectItem>
             </SelectContent>
@@ -165,7 +111,7 @@ export default function SettingsPage() {
       {/* Film Types */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs text-muted-foreground uppercase tracking-wide font-semibold">
+          <h2 className="section-label">
             Film Types
           </h2>
           <Sheet open={filmSheetOpen} onOpenChange={(open) => {
@@ -186,13 +132,13 @@ export default function SettingsPage() {
             </Button>
             <SheetContent
               side="bottom"
-              className="h-[85vh] overflow-y-auto"
-              style={{ backgroundColor: "#0f0f14" }}
+              className="h-[85vh] overflow-y-auto sheet-bg"
             >
               <SheetHeader>
                 <SheetTitle>{editingFilm ? "Edit Film" : "Add Film Type"}</SheetTitle>
               </SheetHeader>
               <FilmForm
+                key={editingFilm?.id ?? "new"}
                 initial={editingFilm}
                 onSave={handleSaveFilm}
               />
@@ -202,7 +148,7 @@ export default function SettingsPage() {
 
         <div className="space-y-2">
           {films.map((film) => (
-            <Card key={film.id} className="p-3" style={{ backgroundColor: "#1a1a24" }}>
+            <Card key={film.id} className="p-3 glass-card">
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -260,14 +206,14 @@ export default function SettingsPage() {
 
       {/* Reset */}
       <section className="space-y-3 pb-4">
-        <h2 className="text-xs text-muted-foreground uppercase tracking-wide font-semibold">
+        <h2 className="section-label">
           Data
         </h2>
         <Dialog open={confirmReset} onOpenChange={setConfirmReset}>
           <Button variant="destructive" className="w-full h-12" onClick={() => setConfirmReset(true)}>
             Reset All Data
           </Button>
-          <DialogContent style={{ backgroundColor: "#1a1a24" }}>
+          <DialogContent className="glass-card-elevated">
             <DialogHeader>
               <DialogTitle>Reset All Data?</DialogTitle>
             </DialogHeader>
@@ -334,8 +280,7 @@ function FilmForm({
           value={filmName}
           onChange={(e) => setFilmName(e.target.value)}
           placeholder="e.g. Agfa D5"
-          className="h-12"
-          style={{ backgroundColor: "#1a1a24" }}
+          className="h-12 input-dark"
         />
       </div>
       <div>
@@ -344,8 +289,7 @@ function FilmForm({
           type="number"
           value={rFactor}
           onChange={(e) => setRFactor(e.target.value)}
-          className="h-12 text-base tabular-nums"
-          style={{ backgroundColor: "#1a1a24" }}
+          className="h-12 text-base tabular-nums input-dark"
         />
       </div>
       <div className="grid grid-cols-2 gap-3">
@@ -355,8 +299,7 @@ function FilmForm({
             type="number"
             value={densityMin}
             onChange={(e) => setDensityMin(e.target.value)}
-            className="h-12 text-base tabular-nums"
-            style={{ backgroundColor: "#1a1a24" }}
+            className="h-12 text-base tabular-nums input-dark"
           />
         </div>
         <div>
@@ -365,8 +308,7 @@ function FilmForm({
             type="number"
             value={densityMax}
             onChange={(e) => setDensityMax(e.target.value)}
-            className="h-12 text-base tabular-nums"
-            style={{ backgroundColor: "#1a1a24" }}
+            className="h-12 text-base tabular-nums input-dark"
           />
         </div>
       </div>
@@ -377,8 +319,7 @@ function FilmForm({
             type="number"
             value={devTemp}
             onChange={(e) => setDevTemp(e.target.value)}
-            className="h-12 text-base tabular-nums"
-            style={{ backgroundColor: "#1a1a24" }}
+            className="h-12 text-base tabular-nums input-dark"
           />
         </div>
         <div>
@@ -387,8 +328,7 @@ function FilmForm({
             type="number"
             value={devTime}
             onChange={(e) => setDevTime(e.target.value)}
-            className="h-12 text-base tabular-nums"
-            style={{ backgroundColor: "#1a1a24" }}
+            className="h-12 text-base tabular-nums input-dark"
           />
         </div>
       </div>
@@ -398,8 +338,7 @@ function FilmForm({
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Optional notes"
-          className="h-12"
-          style={{ backgroundColor: "#1a1a24" }}
+          className="h-12 input-dark"
         />
       </div>
       <Button onClick={handleSubmit} className="w-full h-12 text-base font-semibold">

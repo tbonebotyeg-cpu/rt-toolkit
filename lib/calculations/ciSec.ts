@@ -34,6 +34,7 @@ export function computeCiSec(activityCi: number, timeMinutes: number): number {
 }
 
 export function minutesToMmSs(minutes: number): string {
+  if (isNaN(minutes) || minutes < 0) return "0:00";
   const totalSeconds = Math.round(minutes * 60);
   const mm = Math.floor(totalSeconds / 60);
   const ss = totalSeconds % 60;

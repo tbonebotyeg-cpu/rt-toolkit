@@ -62,10 +62,10 @@ export default function UgCalc() {
             Source
           </Label>
           <Select value={sourceType} onValueChange={(v) => setSourceType(v as SourceType)}>
-            <SelectTrigger className="h-12" style={{ backgroundColor: "#1a1a24" }}>
+            <SelectTrigger className="h-12 input-dark">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent style={{ backgroundColor: "#1a1a24" }}>
+            <SelectContent className="select-dropdown">
               <SelectItem value="Ir-192" className="py-3">Ir-192</SelectItem>
               <SelectItem value="Co-60" className="py-3">Co-60</SelectItem>
             </SelectContent>
@@ -76,10 +76,10 @@ export default function UgCalc() {
             Units
           </Label>
           <Select value={units} onValueChange={(v) => setUnits(v as "mm" | "in")}>
-            <SelectTrigger className="h-12" style={{ backgroundColor: "#1a1a24" }}>
+            <SelectTrigger className="h-12 input-dark">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent style={{ backgroundColor: "#1a1a24" }}>
+            <SelectContent className="select-dropdown">
               <SelectItem value="mm" className="py-3">mm</SelectItem>
               <SelectItem value="in" className="py-3">inches</SelectItem>
             </SelectContent>
@@ -88,7 +88,7 @@ export default function UgCalc() {
       </div>
 
       {/* Formula reminder */}
-      <div className="rounded-lg p-3 border border-border" style={{ backgroundColor: "#1e2030" }}>
+      <div className="formula-box">
         <p className="text-xs text-muted-foreground font-mono">
           Ug = (Fs × t) / D
         </p>
@@ -108,8 +108,7 @@ export default function UgCalc() {
             value={fs}
             onChange={(e) => setFs(e.target.value)}
             placeholder="3.0"
-            className="h-12 text-base tabular-nums"
-            style={{ backgroundColor: "#1a1a24" }}
+            className="h-12 text-base tabular-nums input-dark"
           />
         </div>
         <div>
@@ -121,8 +120,7 @@ export default function UgCalc() {
             value={t}
             onChange={(e) => setT(e.target.value)}
             placeholder="10"
-            className="h-12 text-base tabular-nums"
-            style={{ backgroundColor: "#1a1a24" }}
+            className="h-12 text-base tabular-nums input-dark"
           />
         </div>
         <div>
@@ -134,8 +132,7 @@ export default function UgCalc() {
             value={d}
             onChange={(e) => setD(e.target.value)}
             placeholder="600"
-            className="h-12 text-base tabular-nums"
-            style={{ backgroundColor: "#1a1a24" }}
+            className="h-12 text-base tabular-nums input-dark"
           />
         </div>
       </div>
@@ -149,15 +146,18 @@ export default function UgCalc() {
       {/* Result */}
       {result && (
         <Card
-          className="p-4 animate-result"
-          style={{ backgroundColor: "#1a1a24" }}
+          className="p-4 animate-result glass-card-elevated overflow-hidden"
+          style={{
+            borderTopWidth: "2px",
+            borderTopColor: result.pass ? "rgba(34, 197, 94, 0.5)" : "rgba(239, 68, 68, 0.5)",
+          }}
         >
           <div className="flex items-start justify-between mb-3">
             <div>
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
                 Geometric Unsharpness (Ug)
               </p>
-              <p className="result-value-lg tabular-nums">
+              <p className={`result-value-lg tabular-nums ${result.pass ? "text-emerald-400" : "text-red-400"}`}>
                 {result.ug.toFixed(3)} mm
               </p>
               <p className="text-muted-foreground text-sm">

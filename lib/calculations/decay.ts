@@ -28,6 +28,9 @@ export function calculateDecay(
   targetDate: Date,
   sourceType: SourceType
 ): DecayResult {
+  if (A0 <= 0) {
+    return { activityAtTarget: 0, daysElapsed: 0, decayPercent: 0, projections: [] };
+  }
   const daysElapsed = daysBetween(calDate, targetDate);
   const activityAtTarget = decayActivity(A0, daysElapsed, sourceType);
   const decayPercent = ((A0 - activityAtTarget) / A0) * 100;

@@ -54,7 +54,7 @@ export default function IslCalc() {
   return (
     <div className="p-4 space-y-4">
       {/* Formula reminder */}
-      <div className="rounded-lg p-3 border border-border" style={{ backgroundColor: "#1e2030" }}>
+      <div className="formula-box">
         <p className="text-xs text-muted-foreground font-mono">E₂ = E₁ × (D₂ / D₁)²</p>
         <p className="text-xs text-muted-foreground mt-1">
           New exposure required when changing Source-to-Film Distance (SFD)
@@ -68,10 +68,10 @@ export default function IslCalc() {
             Distance Units
           </Label>
           <Select value={units} onValueChange={(v) => setUnits(v as "in" | "ft")}>
-            <SelectTrigger className="h-12" style={{ backgroundColor: "#1a1a24" }}>
+            <SelectTrigger className="h-12 input-dark">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent style={{ backgroundColor: "#1a1a24" }}>
+            <SelectContent className="select-dropdown">
               <SelectItem value="in" className="py-3">Inches</SelectItem>
               <SelectItem value="ft" className="py-3">Feet</SelectItem>
             </SelectContent>
@@ -82,10 +82,10 @@ export default function IslCalc() {
             Time Units
           </Label>
           <Select value={timeUnits} onValueChange={(v) => setTimeUnits(v as "min" | "sec")}>
-            <SelectTrigger className="h-12" style={{ backgroundColor: "#1a1a24" }}>
+            <SelectTrigger className="h-12 input-dark">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent style={{ backgroundColor: "#1a1a24" }}>
+            <SelectContent className="select-dropdown">
               <SelectItem value="min" className="py-3">Minutes</SelectItem>
               <SelectItem value="sec" className="py-3">Seconds</SelectItem>
             </SelectContent>
@@ -103,8 +103,7 @@ export default function IslCalc() {
             type="number"
             value={d1}
             onChange={(e) => setD1(e.target.value)}
-            className="h-12 text-base tabular-nums"
-            style={{ backgroundColor: "#1a1a24" }}
+            className="h-12 text-base tabular-nums input-dark"
           />
         </div>
         <div>
@@ -115,8 +114,7 @@ export default function IslCalc() {
             type="number"
             value={d2}
             onChange={(e) => setD2(e.target.value)}
-            className="h-12 text-base tabular-nums"
-            style={{ backgroundColor: "#1a1a24" }}
+            className="h-12 text-base tabular-nums input-dark"
           />
         </div>
       </div>
@@ -129,8 +127,7 @@ export default function IslCalc() {
           type="number"
           value={t1}
           onChange={(e) => setT1(e.target.value)}
-          className="h-12 text-base tabular-nums"
-          style={{ backgroundColor: "#1a1a24" }}
+          className="h-12 text-base tabular-nums input-dark"
         />
       </div>
 
@@ -142,13 +139,13 @@ export default function IslCalc() {
 
       {/* Result */}
       {result && (
-        <Card className="p-4 animate-result" style={{ backgroundColor: "#1a1a24" }}>
+        <Card className="p-4 animate-result glass-card-elevated">
           <div className="flex items-start justify-between mb-3">
             <div>
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
                 New Exposure Time
               </p>
-              <p className="result-value-lg tabular-nums">
+              <p className="result-value-lg tabular-nums text-cyan-300">
                 {minutesToMmSs(t2Minutes)}
               </p>
               <p className="text-muted-foreground text-sm">

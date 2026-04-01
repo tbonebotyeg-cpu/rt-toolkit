@@ -7,7 +7,7 @@ import { calculateIqi } from "@/lib/data/iqiWires";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clipboard, ClipboardCheck } from "lucide-react";
+import { ClipboardCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function PipeTable() {
@@ -26,6 +26,8 @@ export default function PipeTable() {
       setCopiedSchedule(entry.schedule);
       if (navigator.vibrate) navigator.vibrate(30);
       setTimeout(() => setCopiedSchedule(null), 2000);
+    }).catch(() => {
+      // Clipboard API not available (e.g. non-HTTPS)
     });
   }
 
@@ -43,10 +45,10 @@ export default function PipeTable() {
           NPS Size
         </label>
         <Select value={selectedNps} onValueChange={(v) => v && setSelectedNps(v)}>
-          <SelectTrigger className="h-12 text-base" style={{ backgroundColor: "#1a1a24" }}>
+          <SelectTrigger className="h-12 text-base input-dark">
             <SelectValue placeholder="Select NPS" />
           </SelectTrigger>
-          <SelectContent style={{ backgroundColor: "#1a1a24" }}>
+          <SelectContent className="select-dropdown">
             {PIPE_SCHEDULES.map((p) => (
               <SelectItem key={p.nps} value={p.nps} className="text-base py-3">
                 NPS {p.npsDisplay} — OD {p.od.toFixed(3)}&quot;
@@ -59,7 +61,7 @@ export default function PipeTable() {
       {pipe && (
         <>
           {/* OD Info Card */}
-          <Card className="p-4" style={{ backgroundColor: "#1a1a24" }}>
+          <Card className="p-4 glass-card-elevated gradient-border">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
@@ -97,93 +99,125 @@ export default function PipeTable() {
             )}
           </Card>
 
-          {/* Schedule List */}
+          {/* Schedule Table */}
           <div>
-            <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wide">
-              Tap schedule to copy wall thickness
+            <p className="section-label mb-2">
+              Schedules — smallest to largest wall
             </p>
-            <div className="space-y-2">
-              {pipe.schedules.map((entry) => {
-                const isCopied = copiedSchedule === entry.schedule;
-                const isExpanded = expandedSchedule === entry.schedule;
-                const iqi =
-                  isExpanded
-                    ? calculateIqi(entry.wall, "SWE/SWV", "Source Side")
-                    : null;
 
-                return (
-                  <div key={entry.schedule}>
-                    <button
-                      onClick={() => handleScheduleClick(entry)}
-                      className={cn(
-                        "w-full flex items-center justify-between p-4 rounded-lg border transition-all text-left",
-                        isExpanded
-                          ? "border-blue-500 bg-blue-950/30"
-                          : "border-border hover:border-blue-700"
-                      )}
-                      style={{ backgroundColor: isExpanded ? undefined : "#1a1a24" }}
-                    >
-                      <div>
-                        <p className="font-semibold text-sm text-foreground">
-                          {entry.schedule}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {(entry.wall * 25.4).toFixed(2)} mm
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="tabular-nums font-bold"
-                          style={{ fontSize: "1.25rem", color: "#fff" }}
-                        >
-                          {entry.wall.toFixed(3)}&quot;
-                        </span>
-                        {isCopied ? (
-                          <ClipboardCheck size={16} className="text-green-400" />
-                        ) : (
-                          <Clipboard size={16} className="text-muted-foreground" />
+            {/* Table Header */}
+            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 px-3 pb-2 text-[10px] text-muted-foreground uppercase tracking-wider">
+              <span>Schedule</span>
+              <span className="text-right">Wall</span>
+              <span className="text-right">OD</span>
+              <span className="text-right">Wire #</span>
+            </div>
+
+            <div className="space-y-1.5">
+              {[...pipe.schedules]
+                .sort((a, b) => a.wall - b.wall)
+                .map((entry) => {
+                  const isCopied = copiedSchedule === entry.schedule;
+                  const isExpanded = expandedSchedule === entry.schedule;
+                  const iqi = calculateIqi(entry.wall, "SWE/SWV", "Source Side");
+
+                  return (
+                    <div key={entry.schedule}>
+                      <button
+                        onClick={() => handleScheduleClick(entry)}
+                        className={cn(
+                          "w-full grid grid-cols-[1fr_auto_auto_auto] gap-x-3 items-center p-3 rounded-lg border transition-all text-left",
+                          isExpanded
+                            ? "border-blue-500 bg-blue-950/30"
+                            : "border-white/[0.04] hover:border-blue-700 glass-card"
                         )}
-                      </div>
-                    </button>
-
-                    {/* Inline IQI Quick Reference */}
-                    {isExpanded && iqi && (
-                      <div
-                        className="rounded-b-lg border border-t-0 border-blue-500 p-4 space-y-2 animate-result"
-                        style={{ backgroundColor: "#1e2030" }}
+                        style={{
+                          borderLeftWidth: "3px",
+                          borderLeftColor: iqi.set === "A" ? "rgba(96, 165, 250, 0.5)"
+                            : iqi.set === "B" ? "rgba(52, 211, 153, 0.5)"
+                            : "rgba(251, 191, 36, 0.5)",
+                        }}
                       >
-                        <p className="text-xs font-semibold text-blue-300 uppercase tracking-wide">
-                          IQI Quick Reference
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Based on parent material wall:{" "}
-                          <span className="text-white font-semibold">
+                        {/* Schedule name */}
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm text-foreground truncate">
+                            {entry.schedule}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            {(entry.wall * 25.4).toFixed(2)} mm
+                          </p>
+                        </div>
+
+                        {/* Wall thickness */}
+                        <div className="text-right">
+                          <p className="tabular-nums font-bold text-base text-white">
                             {entry.wall.toFixed(3)}&quot;
-                          </span>
-                          {" "}— reinforcement excluded per ASME V T-274.2
-                        </p>
-                        <div className="flex items-center justify-between pt-1">
-                          <div>
-                            <p className="text-xs text-muted-foreground">SWE/SWV Source Side</p>
-                            <p className="font-bold text-white">
-                              Wire #{iqi.essentialWireNumber} — Set {iqi.set}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {iqi.essentialWireDiam.toFixed(4)}&quot; ({(iqi.essentialWireDiam * 25.4).toFixed(2)} mm)
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-muted-foreground">Film Side</p>
-                            <p className="font-bold text-amber-300">
-                              Wire #{iqi.essentialWireNumber + 1}
-                            </p>
+                          </p>
+                          {isCopied && (
+                            <ClipboardCheck size={12} className="text-green-400 ml-auto mt-0.5" />
+                          )}
+                        </div>
+
+                        {/* OD */}
+                        <div className="text-right">
+                          <p className="tabular-nums text-sm text-muted-foreground">
+                            {pipe.od.toFixed(3)}&quot;
+                          </p>
+                        </div>
+
+                        {/* Wire # */}
+                        <div className="text-right min-w-[3.5rem]">
+                          <Badge className={cn(
+                            "text-[10px] tabular-nums",
+                            iqi.set === "A" ? "bg-blue-900/60 text-blue-300 border-blue-700/50"
+                              : iqi.set === "B" ? "bg-emerald-900/60 text-emerald-300 border-emerald-700/50"
+                              : "bg-amber-900/60 text-amber-300 border-amber-700/50"
+                          )}>
+                            #{iqi.essentialWireNumber} {iqi.set}
+                          </Badge>
+                        </div>
+                      </button>
+
+                      {/* Expanded IQI Details */}
+                      {isExpanded && (
+                        <div
+                          className="rounded-b-lg border border-t-0 border-blue-500 p-4 space-y-2 animate-result formula-box"
+                        >
+                          <p className="text-xs font-semibold text-blue-300 uppercase tracking-wide">
+                            IQI Details — ASTM E747
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Parent material wall:{" "}
+                            <span className="text-white font-semibold">
+                              {entry.wall.toFixed(3)}&quot;
+                            </span>
+                            {" "}— reinforcement excluded per ASME V T-274.2
+                          </p>
+                          <div className="grid grid-cols-2 gap-3 pt-1 border-t border-white/[0.06]">
+                            <div>
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Source Side</p>
+                              <p className="font-bold text-white text-sm mt-0.5">
+                                Wire #{iqi.essentialWireNumber} — Set {iqi.set}
+                              </p>
+                              <p className="text-xs text-muted-foreground tabular-nums">
+                                {iqi.essentialWireDiam.toFixed(4)}&quot; ({(iqi.essentialWireDiam * 25.4).toFixed(2)} mm)
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Film Side</p>
+                              <p className="font-bold text-amber-300 text-sm mt-0.5">
+                                Wire #{Math.min(iqi.essentialWireNumber + 1, 16)}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {iqi.holeTypeEquiv}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                      )}
+                    </div>
+                  );
+                })}
             </div>
           </div>
         </>

@@ -18,14 +18,15 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 border-t"
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.06]"
       style={{
-        backgroundColor: "#1a1a24",
-        borderColor: "#2a2a38",
+        background: "linear-gradient(180deg, rgba(14, 14, 22, 0.88), rgba(10, 10, 18, 0.98))",
+        backdropFilter: "blur(20px) saturate(1.2)",
+        WebkitBackdropFilter: "blur(20px) saturate(1.2)",
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
-      <div className="flex h-16">
+      <div className="flex h-[4.25rem]">
         {TABS.map(({ href, label, icon: Icon }) => {
           const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
           return (
@@ -33,14 +34,31 @@ export default function BottomNav() {
               key={href}
               href={href}
               className={cn(
-                "flex flex-1 flex-col items-center justify-center gap-0.5 text-xs transition-colors",
+                "flex flex-1 flex-col items-center justify-center gap-1 text-xs transition-all duration-200",
                 active
                   ? "text-blue-400"
-                  : "text-gray-500 hover:text-gray-300"
+                  : "text-gray-500 active:text-gray-300"
               )}
             >
-              <Icon size={22} strokeWidth={active ? 2.5 : 1.8} />
-              <span className={cn("text-[10px]", active && "font-semibold")}>
+              <div className="relative">
+                <Icon
+                  size={22}
+                  strokeWidth={active ? 2.5 : 1.8}
+                  className={cn(
+                    "transition-all duration-200",
+                    active && "drop-shadow-[0_0_8px_rgba(59,130,246,0.4)]"
+                  )}
+                />
+                {active && (
+                  <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-blue-400 shadow-[0_0_6px_rgba(59,130,246,0.6)]" />
+                )}
+              </div>
+              <span
+                className={cn(
+                  "text-[10px] transition-all duration-200",
+                  active ? "font-semibold text-blue-400" : "font-medium"
+                )}
+              >
                 {label}
               </span>
             </Link>

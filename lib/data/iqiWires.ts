@@ -105,10 +105,10 @@ export function calculateIqi(
 ): IqiResult {
   const sourceWireNumber = selectEssentialWire(wallInches);
   const filmSideWireNumber =
-    placement === "Film Side" ? sourceWireNumber + 1 : undefined;
+    placement === "Film Side" ? Math.min(sourceWireNumber + 1, 16) : undefined;
 
   const essentialWireNumber =
-    placement === "Film Side" ? sourceWireNumber + 1 : sourceWireNumber;
+    placement === "Film Side" ? Math.min(sourceWireNumber + 1, 16) : sourceWireNumber;
   const wire = getWireByNumber(essentialWireNumber) ?? getWireByNumber(16)!;
   const set = preferredSet(essentialWireNumber);
 

@@ -88,6 +88,7 @@ export interface AppSettings {
   pinnedSourceType: SourceType;
   pinnedSourceActivityCi: number;
   pinnedSourceCalDate: string; // ISO date
+  cameraSerial: string;
   unitsPreference: "imperial" | "metric";
   defaultFilmId: string;
 }

@@ -42,7 +42,7 @@ export default function CiSecCalc() {
   return (
     <div className="p-4 space-y-4">
       {/* Formula reminder */}
-      <div className="rounded-lg p-3 border border-border" style={{ backgroundColor: "#1e2030" }}>
+      <div className="formula-box">
         <p className="text-xs text-muted-foreground font-mono">
           T₂ = T₁ × (A₁ / A₂)
         </p>
@@ -63,8 +63,7 @@ export default function CiSecCalc() {
               value={a1}
               onChange={(e) => setA1(e.target.value)}
               placeholder="85"
-              className="h-12 text-base tabular-nums"
-              style={{ backgroundColor: "#1a1a24" }}
+              className="h-12 text-base tabular-nums input-dark"
             />
           </div>
           <div>
@@ -76,8 +75,7 @@ export default function CiSecCalc() {
               value={t1}
               onChange={(e) => setT1(e.target.value)}
               placeholder="2.5"
-              className="h-12 text-base tabular-nums"
-              style={{ backgroundColor: "#1a1a24" }}
+              className="h-12 text-base tabular-nums input-dark"
             />
           </div>
         </div>
@@ -91,8 +89,7 @@ export default function CiSecCalc() {
             value={a2}
             onChange={(e) => setA2(e.target.value)}
             placeholder="70"
-            className="h-12 text-base tabular-nums"
-            style={{ backgroundColor: "#1a1a24" }}
+            className="h-12 text-base tabular-nums input-dark"
           />
         </div>
       </div>
@@ -105,13 +102,13 @@ export default function CiSecCalc() {
 
       {/* Result */}
       {result && originalCiSec !== null && (
-        <Card className="p-4 space-y-3 animate-result" style={{ backgroundColor: "#1a1a24" }}>
+        <Card className="p-4 space-y-3 animate-result glass-card-elevated">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
                 New Exposure Time
               </p>
-              <p className="result-value-lg tabular-nums">
+              <p className="result-value-lg tabular-nums text-cyan-300">
                 {result.newTimeDisplay}
               </p>
               <p className="text-muted-foreground text-sm">
