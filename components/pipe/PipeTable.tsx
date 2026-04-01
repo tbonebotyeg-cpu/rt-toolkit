@@ -81,9 +81,9 @@ export default function PipeTable() {
               <SelectValue placeholder="Select NPS" />
             </SelectTrigger>
             <SelectContent className="select-dropdown !w-[calc(100vw-1rem)]" align="start">
-              {PIPE_SCHEDULES.map((p) => (
-                <SelectItem key={p.nps} value={p.nps} className="text-base py-3.5">
-                  NPS {p.npsDisplay} — OD {p.od.toFixed(3)}&quot;
+              {PIPE_SCHEDULES.filter((p) => !["1/8","1/4","3/8"].includes(p.nps)).map((p, i) => (
+                <SelectItem key={p.nps} value={p.nps} className={`text-base py-3.5 justify-center text-center ${i % 2 === 1 ? "bg-white/[0.04]" : ""}`}>
+                  NPS {p.npsDisplay}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -97,9 +97,9 @@ export default function PipeTable() {
               <SelectValue placeholder="Select" />
             </SelectTrigger>
             <SelectContent className="select-dropdown !w-[calc(100vw-1rem)]" align="end">
-              {sortedSchedules.map((s) => (
-                <SelectItem key={s.schedule} value={s.schedule} className="text-base py-3.5">
-                  {s.schedule} — {s.wall.toFixed(3)}&quot; wall
+              {sortedSchedules.map((s, i) => (
+                <SelectItem key={s.schedule} value={s.schedule} className={`text-base py-3.5 justify-center text-center ${i % 2 === 1 ? "bg-white/[0.04]" : ""}`}>
+                  {s.schedule}
                 </SelectItem>
               ))}
             </SelectContent>
