@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AppSettings, FilmTypeSetting } from "@/types";
+import { AppSettings, FilmTypeSetting, SourceType } from "@/types";
 import { loadSettings, saveSettings, resetAllData } from "@/lib/storage/settings";
 import { loadFilms, addFilm, updateFilm, deleteFilm } from "@/lib/storage/films";
 import { generateId } from "@/lib/storage/shots";
-import { Card } from "@/components/ui/card";
+import { calculateDecay, formatActivity } from "@/lib/calculations/decay";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Trash2, Plus, Star, Pencil } from "lucide-react";
+import { Trash2, Plus, Star, Pencil, Atom, Film, Sliders, Database, CheckCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
@@ -24,22 +25,41 @@ export default function SettingsPage() {
   const [filmSheetOpen, setFilmSheetOpen] = useState(false);
   const [editingFilm, setEditingFilm] = useState<FilmTypeSetting | null>(null);
 
+  // Derived: today's decayed activity
+  const [todayActivity, setTodayActivity] = useState<number | null>(null);
+
   useEffect(() => {
-    setSettings(loadSettings());
+    const s = loadSettings();
+    setSettings(s);
     setFilms(loadFilms());
+    computeToday(s);
   }, []);
+
+  function computeToday(s: AppSettings) {
+    try {
+      const calDate = new Date(s.pinnedSourceCalDate);
+      const today = new Date();
+      if (!isNaN(calDate.getTime()) && s.pinnedSourceActivityCi > 0) {
+        const res = calculateDecay(s.pinnedSourceActivityCi, calDate, today, s.pinnedSourceType);
+        setTodayActivity(res.activityAtTarget);
+      }
+    } catch { /* noop */ }
+  }
 
   function handleSave() {
     if (!settings) return;
     saveSettings(settings);
+    computeToday(settings);
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setTimeout(() => setSaved(false), 2500);
   }
 
   function handleReset() {
     resetAllData();
-    setSettings(loadSettings());
+    const s = loadSettings();
+    setSettings(s);
     setFilms(loadFilms());
+    computeToday(s);
     setConfirmReset(false);
   }
 
@@ -65,27 +85,137 @@ export default function SettingsPage() {
     setEditingFilm(null);
   }
 
+  function updateSettings(partial: Partial<AppSettings>) {
+    if (!settings) return;
+    setSettings({ ...settings, ...partial });
+  }
+
   if (!settings) return null;
 
+  const activityColor = todayActivity !== null
+    ? todayActivity >= 50 ? "text-emerald-400"
+    : todayActivity >= 20 ? "text-amber-400"
+    : "text-red-400"
+    : "text-muted-foreground";
+
   return (
-    <div className="p-4 space-y-6">
-      <div className="pt-0">
+    <div className="p-4 space-y-6 pb-8">
+      {/* Header */}
+      <div className="pt-2">
         <h1 className="text-xl font-bold tracking-tight">Settings</h1>
+        <p className="text-xs text-muted-foreground mt-0.5">Source, film, and preferences</p>
       </div>
 
-      {/* Units */}
-      <section className="space-y-3">
-        <h2 className="section-label">
+      {/* ── Source Configuration ── */}
+      <section className="space-y-2.5">
+        <div className="section-heading">
+          <Atom size={12} className="text-blue-400 opacity-100 mr-[-2px]" />
+          Source Configuration
+        </div>
+
+        <div className="glass-card-elevated rounded-2xl overflow-hidden">
+          {/* Today's activity banner */}
+          {todayActivity !== null && (
+            <div className="px-4 py-3 border-b border-white/[0.05]"
+              style={{ background: "linear-gradient(135deg, rgba(18,18,32,0.9), rgba(14,14,24,0.95))" }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Today&apos;s Activity</p>
+                  <p className={cn("text-2xl font-extrabold tabular-nums", activityColor)}>
+                    {formatActivity(todayActivity)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Isotope</p>
+                  <Badge className={cn(
+                    "text-xs font-bold",
+                    settings.pinnedSourceType === "Ir-192"
+                      ? "bg-blue-900/60 text-blue-300 border-blue-700/50"
+                      : "bg-purple-900/60 text-purple-300 border-purple-700/50"
+                  )}>
+                    {settings.pinnedSourceType}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="p-4 space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">
+                  Source Type
+                </Label>
+                <Select
+                  value={settings.pinnedSourceType}
+                  onValueChange={(v) => v && updateSettings({ pinnedSourceType: v as SourceType })}
+                >
+                  <SelectTrigger className="h-12 input-dark">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="select-dropdown">
+                    <SelectItem value="Ir-192" className="py-3">Ir-192</SelectItem>
+                    <SelectItem value="Co-60" className="py-3">Co-60</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">
+                  Cal Activity (Ci)
+                </Label>
+                <Input
+                  type="number"
+                  value={settings.pinnedSourceActivityCi}
+                  onChange={(e) => updateSettings({ pinnedSourceActivityCi: parseFloat(e.target.value) || 0 })}
+                  placeholder="100"
+                  className="h-12 text-base tabular-nums input-dark"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">
+                  Cal Date
+                </Label>
+                <Input
+                  type="date"
+                  value={settings.pinnedSourceCalDate}
+                  onChange={(e) => updateSettings({ pinnedSourceCalDate: e.target.value })}
+                  className="h-12 input-dark"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">
+                  Camera S/N
+                </Label>
+                <Input
+                  value={settings.cameraSerial}
+                  onChange={(e) => updateSettings({ cameraSerial: e.target.value })}
+                  placeholder="e.g. IR-2045"
+                  className="h-12 input-dark"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Display Preferences ── */}
+      <section className="space-y-2.5">
+        <div className="section-heading">
+          <Sliders size={12} className="text-purple-400 opacity-100 mr-[-2px]" />
           Preferences
-        </h2>
-        <Card className="p-4 glass-card">
+        </div>
+
+        <div className="glass-card rounded-xl p-4">
           <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">
             Default Units
           </Label>
           <Select
             value={settings.unitsPreference}
             onValueChange={(v) =>
-              v && setSettings({ ...settings, unitsPreference: v as "imperial" | "metric" })
+              v && updateSettings({ unitsPreference: v as "imperial" | "metric" })
             }
           >
             <SelectTrigger className="h-12 input-dark">
@@ -96,24 +226,33 @@ export default function SettingsPage() {
               <SelectItem value="metric" className="py-3">Metric (mm)</SelectItem>
             </SelectContent>
           </Select>
-        </Card>
+        </div>
       </section>
 
+      {/* Save Button */}
       <Button
         onClick={handleSave}
-        className="w-full h-12 text-base font-semibold"
+        className={cn(
+          "w-full h-12 text-base font-semibold gap-2 transition-all duration-300",
+          saved && "bg-emerald-600 hover:bg-emerald-600"
+        )}
       >
-        {saved ? "Saved!" : "Save Settings"}
+        {saved ? (
+          <><CheckCircle size={16} /> Saved!</>
+        ) : (
+          "Save Settings"
+        )}
       </Button>
 
-      <Separator />
+      <Separator className="opacity-30" />
 
-      {/* Film Types */}
-      <section className="space-y-3">
+      {/* ── Film Types ── */}
+      <section className="space-y-2.5">
         <div className="flex items-center justify-between">
-          <h2 className="section-label">
+          <div className="section-heading">
+            <Film size={12} className="text-amber-400 opacity-100 mr-[-2px]" />
             Film Types
-          </h2>
+          </div>
           <Sheet open={filmSheetOpen} onOpenChange={(open) => {
             setFilmSheetOpen(open);
             if (!open) setEditingFilm(null);
@@ -121,7 +260,7 @@ export default function SettingsPage() {
             <Button
               variant="secondary"
               size="sm"
-              className="gap-1.5"
+              className="gap-1.5 h-9"
               onClick={() => {
                 setEditingFilm(null);
                 setFilmSheetOpen(true);
@@ -146,98 +285,117 @@ export default function SettingsPage() {
           </Sheet>
         </div>
 
-        <div className="space-y-2">
-          {films.map((film) => (
-            <Card key={film.id} className="p-3 glass-card">
-              <div className="flex items-center justify-between">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold text-sm">{film.filmName}</p>
-                    {film.isDefault && (
-                      <Badge className="text-[10px] bg-blue-900 text-blue-300 border-blue-700">
-                        Default
-                      </Badge>
-                    )}
+        {films.length === 0 ? (
+          <div className="empty-state">
+            <Film size={24} className="text-muted-foreground/30 mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">No films configured</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">Tap &quot;Add Film&quot; to get started.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {films.map((film) => (
+              <div key={film.id} className="glass-card rounded-xl p-3.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <p className="font-semibold text-sm">{film.filmName}</p>
+                      {film.isDefault && (
+                        <Badge className="text-[10px] bg-blue-900/50 text-blue-300 border-blue-700/50">
+                          Default
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      R={film.rFactor} &middot; Density {film.targetDensityMin}–{film.targetDensityMax} &middot;{" "}
+                      {film.developerTempF}°F / {film.developerTimeMin}min
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    R={film.rFactor} &middot; Density {film.targetDensityMin}–{film.targetDensityMax} &middot;{" "}
-                    {film.developerTempF}°F / {film.developerTimeMin}min
-                  </p>
-                </div>
-                <div className="flex items-center gap-1 shrink-0 ml-2">
-                  {!film.isDefault && (
+                  <div className="flex items-center gap-0.5 shrink-0 ml-2">
+                    {!film.isDefault && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9"
+                        onClick={() => handleSetDefault(film.id)}
+                        title="Set as default"
+                      >
+                        <Star size={14} className="text-muted-foreground" />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8"
-                      onClick={() => handleSetDefault(film.id)}
-                      title="Set as default"
+                      className="h-9 w-9"
+                      onClick={() => {
+                        setEditingFilm(film);
+                        setFilmSheetOpen(true);
+                      }}
                     >
-                      <Star size={14} className="text-muted-foreground" />
+                      <Pencil size={14} className="text-muted-foreground" />
                     </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => {
-                      setEditingFilm(film);
-                      setFilmSheetOpen(true);
-                    }}
-                  >
-                    <Pencil size={14} className="text-muted-foreground" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => handleDeleteFilm(film.id)}
-                  >
-                    <Trash2 size={14} className="text-red-400" />
-                  </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9"
+                      onClick={() => handleDeleteFilm(film.id)}
+                    >
+                      <Trash2 size={14} className="text-red-400" />
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </Card>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
-      <Separator />
+      <Separator className="opacity-30" />
 
-      {/* Reset */}
-      <section className="space-y-3 pb-4">
-        <h2 className="section-label">
-          Data
-        </h2>
-        <Dialog open={confirmReset} onOpenChange={setConfirmReset}>
-          <Button variant="destructive" className="w-full h-12" onClick={() => setConfirmReset(true)}>
-            Reset All Data
-          </Button>
-          <DialogContent className="glass-card-elevated">
-            <DialogHeader>
-              <DialogTitle>Reset All Data?</DialogTitle>
-            </DialogHeader>
-            <p className="text-sm text-muted-foreground">
-              This will delete all shots, film settings, and app settings. This cannot be undone.
-            </p>
-            <div className="flex gap-3 mt-4">
-              <Button
-                variant="secondary"
-                className="flex-1"
-                onClick={() => setConfirmReset(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                className="flex-1"
-                onClick={handleReset}
-              >
-                Reset
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+      {/* ── Data Management ── */}
+      <section className="space-y-2.5 pb-4">
+        <div className="section-heading">
+          <Database size={12} className="text-red-400 opacity-100 mr-[-2px]" />
+          Data Management
+        </div>
+
+        <div className="glass-card rounded-xl p-4 space-y-2">
+          <p className="text-sm text-muted-foreground">
+            Erase all shots, film settings, and app configuration from this device. This cannot be undone.
+          </p>
+          <Dialog open={confirmReset} onOpenChange={setConfirmReset}>
+            <Button
+              variant="destructive"
+              className="w-full h-12"
+              onClick={() => setConfirmReset(true)}
+            >
+              Reset All Data
+            </Button>
+            <DialogContent className="glass-card-elevated mx-4">
+              <DialogHeader>
+                <DialogTitle>Reset All Data?</DialogTitle>
+              </DialogHeader>
+              <p className="text-sm text-muted-foreground">
+                All shots, film types, and settings will be permanently deleted. This cannot be undone.
+              </p>
+              <div className="flex gap-3 mt-4">
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={() => setConfirmReset(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={handleReset}
+                >
+                  Reset Everything
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </section>
     </div>
   );

@@ -2,6 +2,11 @@ export type SourceType = "Ir-192" | "Co-60";
 
 export type Technique = "SWE/SWV" | "DWE/SWV" | "DWE/DWV" | "Panoramic";
 
+/** Shooting technique for pipe radiography exposure calculation.
+ *  SWSI = Single Wall Single Image: source inside, 1× wall thickness.
+ *  DWSI = Double Wall Single Image: source outside, radiation through 2× wall. */
+export type ShootingTechnique = "DWSI" | "SWSI";
+
 export type IqiPlacement = "Source Side" | "Film Side";
 
 export interface ScheduleEntry {
@@ -48,6 +53,7 @@ export interface ReferenceShot {
 
   // Technique
   technique: Technique;
+  shootingTechnique?: ShootingTechnique; // DWSI = 2× wall, SWSI = 1× wall
   sfd: number; // Source-to-Film Distance in inches
 
   // Source at time of shot

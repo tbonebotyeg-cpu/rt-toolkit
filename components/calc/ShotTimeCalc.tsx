@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { ReferenceShot, FilmTypeSetting, SourceType, ShotTimeResult } from "@/types";
+import { ReferenceShot, FilmTypeSetting, SourceType, ShotTimeResult, ShootingTechnique } from "@/types";
 import { calcShotTimeFromRef } from "@/lib/calculations/shotTime";
 import { calcTimeFromChart, CHART_REF_SFD } from "@/lib/data/exposureChart";
 import { minutesToMmSs } from "@/lib/calculations/ciSec";
@@ -27,6 +27,8 @@ interface ManualResult {
   filmRatio: number;
   ciSec: number;
   wallIn: number;
+  effectiveWall: number;
+  technique: ShootingTechnique;
 }
 
 export default function ShotTimeCalc() {
@@ -43,6 +45,7 @@ export default function ShotTimeCalc() {
   const [reinforcement, setReinforcement] = useState("0.125");
   const [sfdOverride, setSfdOverride] = useState("");
   const [filmName, setFilmName] = useState("");
+  const [shootingTechnique, setShootingTechnique] = useState<ShootingTechnique>("SWSI");
 
   // From Shot mode inputs
   const [selectedShotId, setSelectedShotId] = useState("");
@@ -69,6 +72,9 @@ export default function ShotTimeCalc() {
     ? parseFloat(wallOverride)
     : schedEntry?.wall ?? 0;
 
+  // Effective wall for exposure calculation
+  const effectiveWall = shootingTechnique === "DWSI" ? wallThickness * 2 : wallThickness;
+
   // Auto-compute SFD = OD + 2 * reinforcement height
   const computedSfd = useMemo(() => {
     const r = parseFloat(reinforcement) || 0;
@@ -78,7 +84,7 @@ export default function ShotTimeCalc() {
 
   const sfd = sfdOverride ? sfdOverride : (computedSfd > 0 ? computedSfd.toFixed(3) : "");
 
-  // Load data on mount — use today's decayed activity from saved source
+  // Load data on mount
   useEffect(() => {
     const f = loadFilms();
     const s = loadShots();
@@ -88,7 +94,6 @@ export default function ShotTimeCalc() {
     setSourceType(settings.pinnedSourceType);
     setCalActivityCi(settings.pinnedSourceActivityCi);
 
-    // Compute today's decayed activity
     try {
       const calDate = new Date(settings.pinnedSourceCalDate);
       const today = new Date();
@@ -132,7 +137,7 @@ export default function ShotTimeCalc() {
     if (mode !== "manual") return;
     calcManual();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sourceType, wallThickness, activity, sfd, sfdOverride, computedSfd, filmName, mode, films]);
+  }, [sourceType, wallThickness, activity, sfd, sfdOverride, computedSfd, filmName, mode, films, shootingTechnique]);
 
   // Recalculate from-shot mode
   useEffect(() => {
@@ -154,7 +159,7 @@ export default function ShotTimeCalc() {
     }
 
     try {
-      const res = calcTimeFromChart(wallThickness, sourceType, a, s, r);
+      const res = calcTimeFromChart(effectiveWall, sourceType, a, s, r);
       const ciSec = a * res.timeMinutes * 60;
       setManualResult({
         timeMinutes: res.timeMinutes,
@@ -164,6 +169,8 @@ export default function ShotTimeCalc() {
         filmRatio: res.filmRatio,
         ciSec,
         wallIn: wallThickness,
+        effectiveWall,
+        technique: shootingTechnique,
       });
     } catch (e) {
       setError(String(e));
@@ -213,50 +220,93 @@ export default function ShotTimeCalc() {
   return (
     <div className="p-4 space-y-4">
       {/* Mode Toggle */}
-      <div className="flex gap-1 p-1 rounded-xl" style={{ backgroundColor: "rgba(255,255,255,0.04)" }}>
-        <button
-          onClick={() => setMode("manual")}
-          className={cn(
-            "flex-1 py-2.5 text-xs font-medium transition-all duration-200 rounded-lg min-h-0",
-            mode === "manual"
-              ? "text-white bg-blue-500/20 shadow-sm shadow-blue-500/10"
-              : "text-muted-foreground hover:text-foreground hover:bg-white/[0.03]"
-          )}
-        >
-          Exposure Chart
-        </button>
-        <button
-          onClick={() => setMode("fromShot")}
-          className={cn(
-            "flex-1 py-2.5 text-xs font-medium transition-all duration-200 rounded-lg min-h-0",
-            mode === "fromShot"
-              ? "text-white bg-blue-500/20 shadow-sm shadow-blue-500/10"
-              : "text-muted-foreground hover:text-foreground hover:bg-white/[0.03]"
-          )}
-        >
-          From Shot
-        </button>
+      <div className="flex gap-1 p-1 rounded-xl bg-white/[0.04]">
+        {(["manual", "fromShot"] as Mode[]).map((m) => (
+          <button
+            key={m}
+            onClick={() => setMode(m)}
+            className={cn(
+              "flex-1 py-2.5 text-xs font-medium transition-all duration-200 rounded-lg",
+              mode === m
+                ? "bg-blue-500/25 text-blue-300 shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
+            )}
+          >
+            {m === "manual" ? "Exposure Chart" : "From Shot"}
+          </button>
+        ))}
       </div>
 
       {/* ───── Manual / Exposure Chart Mode ───── */}
       {mode === "manual" && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {/* Formula */}
           <div className="formula-box">
             <p className="text-xs text-muted-foreground font-mono">
               T = (CI·sec<sub>chart</sub> / (A × 60)) × (SFD / {CHART_REF_SFD})² × R
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              Uses built-in exposure chart (steel, density ~2.0). Ref SFD = {CHART_REF_SFD}&quot;
+              Built-in chart (steel, density ~2.0). Ref SFD = {CHART_REF_SFD}&quot;
             </p>
+          </div>
+
+          {/* ── Shooting Technique Toggle ── */}
+          <div>
+            <Label className="text-xs text-muted-foreground mb-2 block uppercase tracking-wide">
+              Shooting Technique
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setShootingTechnique("SWSI")}
+                className={cn(
+                  "p-4 rounded-xl border text-left transition-all duration-200",
+                  shootingTechnique === "SWSI"
+                    ? "bg-emerald-900/30 border-emerald-500/50"
+                    : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]"
+                )}
+              >
+                <p className={cn(
+                  "font-bold text-base tracking-wide",
+                  shootingTechnique === "SWSI" ? "text-emerald-300" : "text-muted-foreground"
+                )}>SWSI</p>
+                <p className={cn(
+                  "text-xs mt-0.5 font-medium",
+                  shootingTechnique === "SWSI" ? "text-emerald-400/80" : "text-muted-foreground/70"
+                )}>Source Inside</p>
+                <p className={cn(
+                  "text-[10px] mt-1 tabular-nums",
+                  shootingTechnique === "SWSI" ? "text-emerald-500/70" : "text-muted-foreground/50"
+                )}>1× wall thickness</p>
+              </button>
+              <button
+                onClick={() => setShootingTechnique("DWSI")}
+                className={cn(
+                  "p-4 rounded-xl border text-left transition-all duration-200",
+                  shootingTechnique === "DWSI"
+                    ? "bg-amber-900/30 border-amber-500/50"
+                    : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]"
+                )}
+              >
+                <p className={cn(
+                  "font-bold text-base tracking-wide",
+                  shootingTechnique === "DWSI" ? "text-amber-300" : "text-muted-foreground"
+                )}>DWSI</p>
+                <p className={cn(
+                  "text-xs mt-0.5 font-medium",
+                  shootingTechnique === "DWSI" ? "text-amber-400/80" : "text-muted-foreground/70"
+                )}>Source Outside</p>
+                <p className={cn(
+                  "text-[10px] mt-1 tabular-nums",
+                  shootingTechnique === "DWSI" ? "text-amber-500/70" : "text-muted-foreground/50"
+                )}>2× wall thickness</p>
+              </button>
+            </div>
           </div>
 
           {/* Source + NPS + Schedule */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">
-                Source
-              </Label>
+              <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">Source</Label>
               <Select value={sourceType} onValueChange={(v) => v && setSourceType(v as SourceType)}>
                 <SelectTrigger className="h-12 input-dark">
                   <SelectValue />
@@ -268,9 +318,7 @@ export default function ShotTimeCalc() {
               </Select>
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">
-                NPS
-              </Label>
+              <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">NPS</Label>
               <Select value={nps} onValueChange={(v) => v && setNps(v)}>
                 <SelectTrigger className="h-12 input-dark">
                   <SelectValue />
@@ -285,9 +333,7 @@ export default function ShotTimeCalc() {
               </Select>
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">
-                Schedule
-              </Label>
+              <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">Schedule</Label>
               <Select value={schedule} onValueChange={(v) => v && setSchedule(v)}>
                 <SelectTrigger className="h-12 input-dark">
                   <SelectValue />
@@ -303,28 +349,62 @@ export default function ShotTimeCalc() {
             </div>
           </div>
 
-          {/* Wall thickness display + override */}
-          <div className="flex items-center gap-3">
-            <div className="flex-1">
-              <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">
-                Wall Thickness (in)
-              </Label>
-              <Input
-                type="number"
-                value={wallOverride || (wallThickness ? wallThickness.toFixed(3) : "")}
-                onChange={(e) => setWallOverride(e.target.value)}
-                placeholder={schedEntry?.wall.toFixed(3) ?? "0.000"}
-                className="h-12 text-base tabular-nums input-dark"
-              />
+          {/* Wall thickness + Effective Wall */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">
+                  Wall Thickness (in)
+                </Label>
+                <Input
+                  type="number"
+                  value={wallOverride || (wallThickness ? wallThickness.toFixed(3) : "")}
+                  onChange={(e) => setWallOverride(e.target.value)}
+                  placeholder={schedEntry?.wall.toFixed(3) ?? "0.000"}
+                  className="h-12 text-base tabular-nums input-dark"
+                />
+              </div>
+              {!wallOverride && schedEntry && (
+                <Badge variant="secondary" className="mt-5 text-[10px] shrink-0">
+                  {schedule} — {schedEntry.wall.toFixed(3)}&quot;
+                </Badge>
+              )}
             </div>
-            {!wallOverride && schedEntry && (
-              <Badge variant="secondary" className="mt-5 text-[10px] shrink-0">
-                {schedule} — {schedEntry.wall.toFixed(3)}&quot;
-              </Badge>
+
+            {/* Effective Wall Display */}
+            {wallThickness > 0 && (
+              <div className={cn(
+                "flex items-center justify-between px-3 py-2.5 rounded-lg text-sm",
+                shootingTechnique === "DWSI"
+                  ? "bg-amber-900/20 border border-amber-500/30"
+                  : "bg-emerald-900/15 border border-emerald-500/25"
+              )}>
+                <div className="flex items-center gap-2">
+                  <Badge className={cn(
+                    "text-[10px] font-bold",
+                    shootingTechnique === "DWSI"
+                      ? "bg-amber-800/60 text-amber-300 border-amber-600/50"
+                      : "bg-emerald-800/60 text-emerald-300 border-emerald-600/50"
+                  )}>
+                    {shootingTechnique}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {shootingTechnique === "DWSI"
+                      ? `2 × ${wallThickness.toFixed(3)}"`
+                      : `1 × ${wallThickness.toFixed(3)}"`}
+                  </span>
+                </div>
+                <span className={cn(
+                  "font-bold tabular-nums",
+                  shootingTechnique === "DWSI" ? "text-amber-300" : "text-emerald-300"
+                )}>
+                  Eff. {effectiveWall.toFixed(3)}&quot;
+                </span>
+              </div>
             )}
           </div>
 
-          {/* Activity — decayed to today */}
+          {/* Activity */}
           <div>
             <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">
               Activity (Ci)
@@ -338,12 +418,12 @@ export default function ShotTimeCalc() {
             />
             {calActivityCi > 0 && parseFloat(activity) !== calActivityCi && (
               <p className="text-[10px] text-muted-foreground mt-1 tabular-nums">
-                Decayed from {calActivityCi} Ci cal &mdash; {sourceType}
+                Decayed from {calActivityCi} Ci cal — {sourceType}
               </p>
             )}
           </div>
 
-          {/* SFD — auto-computed from OD + 2 * reinforcement */}
+          {/* SFD */}
           <div className="formula-box space-y-2.5">
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold">
@@ -355,7 +435,7 @@ export default function ShotTimeCalc() {
             </div>
             {pipe && computedSfd > 0 && !sfdOverride && (
               <p className="text-[11px] text-muted-foreground tabular-nums">
-                OD {pipe.od.toFixed(3)}&quot; + 2 &times; {(parseFloat(reinforcement) || 0).toFixed(3)}&quot; reinf = {computedSfd.toFixed(3)}&quot;
+                OD {pipe.od.toFixed(3)}&quot; + 2 × {(parseFloat(reinforcement) || 0).toFixed(3)}&quot; reinf = {computedSfd.toFixed(3)}&quot;
               </p>
             )}
             <div className="grid grid-cols-2 gap-3">
@@ -407,64 +487,91 @@ export default function ShotTimeCalc() {
 
           {/* Manual Result */}
           {manualResult && (
-            <Card className="p-4 space-y-3 animate-result glass-card-elevated overflow-hidden">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
-                    Exposure Time
-                  </p>
-                  <p className="result-value-lg tabular-nums text-cyan-300">
-                    {manualResult.timeDisplay}
-                  </p>
-                  <p className="text-muted-foreground text-sm">
-                    {manualResult.timeMinutes.toFixed(2)} min
-                  </p>
+            <Card className="overflow-hidden animate-result glass-card-elevated" style={{
+              boxShadow: "0 0 32px rgba(6, 182, 212, 0.07), 0 4px 24px rgba(0,0,0,0.3)"
+            }}>
+              {/* Colored top band */}
+              <div className={cn(
+                "h-1",
+                manualResult.technique === "DWSI"
+                  ? "bg-gradient-to-r from-amber-500 to-amber-600"
+                  : "bg-gradient-to-r from-cyan-500 to-blue-500"
+              )} />
+              <div className="p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                      Exposure Time
+                    </p>
+                    <p className="result-value-lg tabular-nums text-cyan-300">
+                      {manualResult.timeDisplay}
+                    </p>
+                    <p className="text-muted-foreground text-sm">
+                      {manualResult.timeMinutes.toFixed(2)} min
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1.5">
+                    <Badge className={cn(
+                      "text-xs font-bold",
+                      manualResult.timeMinutes > 30
+                        ? "bg-amber-900 text-amber-300 border-amber-700"
+                        : "bg-green-900 text-green-300 border-green-700"
+                    )}>
+                      {sourceType}
+                    </Badge>
+                    <Badge className={cn(
+                      "text-[10px] font-bold",
+                      manualResult.technique === "DWSI"
+                        ? "bg-amber-900/60 text-amber-300 border-amber-700/50"
+                        : "bg-emerald-900/60 text-emerald-300 border-emerald-700/50"
+                    )}>
+                      {manualResult.technique}
+                    </Badge>
+                  </div>
                 </div>
-                <Badge
-                  className={cn(
-                    "text-xs",
-                    manualResult.timeMinutes > 30
-                      ? "bg-amber-900 text-amber-300 border-amber-700"
-                      : "bg-green-900 text-green-300 border-green-700"
-                  )}
-                >
-                  {sourceType}
-                </Badge>
-              </div>
 
-              <div className="grid grid-cols-3 gap-2 border-t border-border pt-2">
-                <div className="text-center">
-                  <p className="text-xs text-muted-foreground">Base CI·sec</p>
-                  <p className="tabular-nums font-semibold text-sm">
-                    {manualResult.baseCiSec.toFixed(0)}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">
-                    @ 1Ci, {CHART_REF_SFD}&quot;
-                  </p>
+                <div className="grid grid-cols-3 gap-2 border-t border-border pt-3">
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground">Base CI·sec</p>
+                    <p className="tabular-nums font-semibold text-sm mt-0.5">
+                      {manualResult.baseCiSec.toFixed(0)}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      @ 1Ci, {CHART_REF_SFD}&quot;
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground">ISL (SFD)</p>
+                    <p className="tabular-nums font-semibold text-sm mt-0.5">
+                      {manualResult.islMultiplier.toFixed(3)}×
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground">Film (R)</p>
+                    <p className="tabular-nums font-semibold text-sm mt-0.5">
+                      {manualResult.filmRatio.toFixed(2)}×
+                    </p>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <p className="text-xs text-muted-foreground">ISL (SFD)</p>
-                  <p className="tabular-nums font-semibold text-sm">
-                    {manualResult.islMultiplier.toFixed(3)}×
-                  </p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-muted-foreground">Film (R)</p>
-                  <p className="tabular-nums font-semibold text-sm">
-                    {manualResult.filmRatio.toFixed(2)}×
-                  </p>
-                </div>
-              </div>
 
-              <div className="flex justify-between items-center border-t border-border pt-2">
-                <p className="text-xs text-muted-foreground">
-                  Wall: {manualResult.wallIn.toFixed(3)}&quot; · CI·sec: {manualResult.ciSec.toFixed(0)}
+                <div className={cn(
+                  "flex items-center justify-between px-2.5 py-2 rounded-lg text-xs border-t border-border pt-3"
+                )}>
+                  <span className="text-muted-foreground">
+                    Nominal: {manualResult.wallIn.toFixed(3)}&quot;
+                    {manualResult.technique === "DWSI" && (
+                      <span className="text-amber-400/80"> → Eff: {manualResult.effectiveWall.toFixed(3)}&quot;</span>
+                    )}
+                  </span>
+                  <span className="text-muted-foreground tabular-nums">
+                    CI·sec: {manualResult.ciSec.toFixed(0)}
+                  </span>
+                </div>
+
+                <p className="text-[10px] text-muted-foreground italic">
+                  Approximate — verify against your company exposure charts
                 </p>
               </div>
-
-              <p className="text-[10px] text-muted-foreground italic">
-                Approximate — verify against your company exposure charts
-              </p>
             </Card>
           )}
         </div>
@@ -473,7 +580,6 @@ export default function ShotTimeCalc() {
       {/* ───── From Shot Mode ───── */}
       {mode === "fromShot" && (
         <div className="space-y-3">
-          {/* Formula */}
           <div className="formula-box">
             <p className="text-xs text-muted-foreground font-mono">
               T₂ = T₁ × (A₁ / A₂) × (D₂ / D₁)² × (R₂ / R₁)
@@ -485,9 +591,7 @@ export default function ShotTimeCalc() {
 
           {shots.length === 0 ? (
             <div className="formula-box text-center">
-              <p className="text-sm text-muted-foreground">
-                No reference shots logged.
-              </p>
+              <p className="text-sm text-muted-foreground">No reference shots logged.</p>
               <p className="text-xs text-muted-foreground mt-1">
                 Add a shot in the Shots tab to use this mode.
               </p>
@@ -572,38 +676,43 @@ export default function ShotTimeCalc() {
 
               {/* From Shot Result */}
               {shotResult && (
-                <Card className="p-4 space-y-3 animate-result glass-card-elevated overflow-hidden">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
-                        New Exposure Time
-                      </p>
-                      <p className="result-value-lg tabular-nums text-cyan-300">
-                        {shotResult.newTimeDisplay}
-                      </p>
-                      <p className="text-muted-foreground text-sm">
-                        {shotResult.newTimeMinutes.toFixed(2)} min
+                <Card className="overflow-hidden animate-result glass-card-elevated" style={{
+                  boxShadow: "0 0 32px rgba(59,130,246,0.07), 0 4px 24px rgba(0,0,0,0.3)"
+                }}>
+                  <div className="h-1 bg-gradient-to-r from-blue-500 to-violet-500" />
+                  <div className="p-4 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                          New Exposure Time
+                        </p>
+                        <p className="result-value-lg tabular-nums text-cyan-300">
+                          {shotResult.newTimeDisplay}
+                        </p>
+                        <p className="text-muted-foreground text-sm">
+                          {shotResult.newTimeMinutes.toFixed(2)} min
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground">Combined ×</p>
+                        <p className="tabular-nums font-bold text-xl text-blue-300 mt-0.5">
+                          {shotResult.combinedMultiplier.toFixed(3)}×
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 border-t border-border pt-3">
+                      <FactorStat label="Activity" value={`${shotResult.activityRatio.toFixed(3)}×`} />
+                      <FactorStat label="ISL (SFD)" value={`${shotResult.islMultiplier.toFixed(3)}×`} />
+                      <FactorStat label="Film (R)" value={`${shotResult.filmRatio.toFixed(3)}×`} />
+                    </div>
+
+                    <div className="flex justify-between items-center border-t border-border pt-2">
+                      <p className="text-xs text-muted-foreground">CI·sec</p>
+                      <p className="tabular-nums font-semibold text-sm">
+                        {shotResult.ciSec.toFixed(0)}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-muted-foreground">Combined</p>
-                      <p className="tabular-nums font-bold text-xl text-blue-300">
-                        {shotResult.combinedMultiplier.toFixed(3)}×
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 border-t border-border pt-2">
-                    <FactorStat label="Activity" value={`${shotResult.activityRatio.toFixed(3)}×`} />
-                    <FactorStat label="ISL (SFD)" value={`${shotResult.islMultiplier.toFixed(3)}×`} />
-                    <FactorStat label="Film (R)" value={`${shotResult.filmRatio.toFixed(3)}×`} />
-                  </div>
-
-                  <div className="flex justify-between items-center border-t border-border pt-2">
-                    <p className="text-xs text-muted-foreground">CI·sec</p>
-                    <p className="tabular-nums font-semibold text-sm">
-                      {shotResult.ciSec.toFixed(0)}
-                    </p>
                   </div>
                 </Card>
               )}
@@ -634,7 +743,7 @@ function FactorStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="text-center">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="tabular-nums font-semibold text-sm">{value}</p>
+      <p className="tabular-nums font-semibold text-sm mt-0.5">{value}</p>
     </div>
   );
 }

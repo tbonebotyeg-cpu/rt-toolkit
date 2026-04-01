@@ -9,57 +9,68 @@
   .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
+  .scrollbar-hidden {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @layer base {
   :root {
-    /* RT Toolkit dark theme — light mode intentionally uses same dark palette */
-    --background: 240 6% 7%;
-    --foreground: 0 0% 95%;
-    --card: 240 10% 12%;
-    --card-foreground: 0 0% 95%;
-    --popover: 240 10% 12%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 217 91% 60%;
+    /* RT Toolkit dark theme — always dark */
+    --background: 240 8% 6%;
+    --foreground: 220 15% 95%;
+    --card: 240 10% 11%;
+    --card-foreground: 220 15% 95%;
+    --popover: 240 12% 13%;
+    --popover-foreground: 220 15% 95%;
+    --primary: 210 100% 58%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 8% 18%;
-    --secondary-foreground: 0 0% 90%;
-    --muted: 240 8% 18%;
-    --muted-foreground: 240 5% 60%;
-    --accent: 217 91% 60%;
+    --secondary: 240 8% 17%;
+    --secondary-foreground: 220 10% 85%;
+    --muted: 240 8% 17%;
+    --muted-foreground: 220 6% 55%;
+    --accent: 210 100% 58%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 6% 20%;
-    --input: 240 6% 20%;
-    --ring: 217 91% 60%;
+    --border: 240 7% 18%;
+    --input: 240 7% 14%;
+    --ring: 210 100% 58%;
     --radius: 0.75rem;
-    /* Result / warning colors */
+    /* Semantic colors */
     --pass: 142 71% 45%;
     --fail: 0 72% 51%;
     --warn: 38 92% 50%;
+    /* Accent palette */
+    --cyan: 188 100% 42%;
+    --emerald: 160 84% 39%;
+    --amber: 38 92% 50%;
   }
 
   .dark {
-    --background: 240 6% 7%;
-    --foreground: 0 0% 95%;
-    --card: 240 10% 12%;
-    --card-foreground: 0 0% 95%;
-    --popover: 240 10% 12%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 217 91% 60%;
+    --background: 240 8% 6%;
+    --foreground: 220 15% 95%;
+    --card: 240 10% 11%;
+    --card-foreground: 220 15% 95%;
+    --popover: 240 12% 13%;
+    --popover-foreground: 220 15% 95%;
+    --primary: 210 100% 58%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 8% 18%;
-    --secondary-foreground: 0 0% 90%;
-    --muted: 240 8% 18%;
-    --muted-foreground: 240 5% 60%;
-    --accent: 217 91% 60%;
+    --secondary: 240 8% 17%;
+    --secondary-foreground: 220 10% 85%;
+    --muted: 240 8% 17%;
+    --muted-foreground: 220 6% 55%;
+    --accent: 210 100% 58%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 6% 20%;
-    --input: 240 6% 20%;
-    --ring: 217 91% 60%;
+    --border: 240 7% 18%;
+    --input: 240 7% 14%;
+    --ring: 210 100% 58%;
   }
 
   * {
@@ -68,8 +79,8 @@
 
   body {
     @apply bg-background text-foreground;
-    background-color: #0a0a12;
-    color: #f2f2f5;
+    background-color: #090910;
+    color: #eceff4;
   }
 
   html {
@@ -77,12 +88,12 @@
     -webkit-text-size-adjust: 100%;
   }
 
-  /* Large tap targets for field use */
+  /* ─── Touch targets — field use ─── */
   button, [role="button"], input, select, textarea {
     min-height: 48px;
   }
 
-  /* High-contrast result numbers */
+  /* ─── Result numbers ─── */
   .result-value {
     font-size: 1.75rem;
     font-weight: 700;
@@ -92,28 +103,32 @@
   }
 
   .result-value-lg {
-    font-size: 2.5rem;
+    font-size: 2.75rem;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.04em;
     color: #ffffff;
-    text-shadow: 0 0 30px rgba(255, 255, 255, 0.08);
+    line-height: 1;
   }
 
   /* ─── Glass cards ─── */
   .glass-card {
-    background: linear-gradient(135deg, rgba(24, 24, 37, 0.8), rgba(18, 18, 28, 0.9));
+    background: linear-gradient(145deg, rgba(22, 22, 34, 0.85), rgba(16, 16, 26, 0.92));
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.055);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 0 0 0.5px rgba(255, 255, 255, 0.03);
   }
 
   .glass-card-elevated {
-    background: linear-gradient(145deg, rgba(30, 30, 48, 0.85), rgba(20, 20, 32, 0.95));
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(145deg, rgba(28, 28, 44, 0.9), rgba(18, 18, 30, 0.96));
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.075);
+    box-shadow:
+      0 4px 24px rgba(0, 0, 0, 0.35),
+      0 1px 4px rgba(0, 0, 0, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
   /* ─── Gradient border ─── */
@@ -126,7 +141,7 @@
     inset: 0;
     border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(139, 92, 246, 0.15), transparent 60%);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.35), rgba(139, 92, 246, 0.2), transparent 60%);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
@@ -137,75 +152,208 @@
   /* ─── Section label ─── */
   .section-label {
     font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
+    font-weight: 700;
+    letter-spacing: 0.09em;
     text-transform: uppercase;
     color: hsl(var(--muted-foreground));
   }
 
+  /* ─── Section heading with colored dot ─── */
+  .section-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+  }
+  .section-heading::before {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: hsl(var(--primary));
+    flex-shrink: 0;
+    opacity: 0.6;
+  }
+
   /* ─── Formula box ─── */
   .formula-box {
-    background: linear-gradient(135deg, rgba(30, 32, 48, 0.7), rgba(20, 20, 32, 0.8));
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 0.75rem;
-    padding: 0.75rem;
-  }
-
-  /* ─── Input dark surface ─── */
-  .input-dark {
-    background-color: #12121c !important;
-    border-color: rgba(255, 255, 255, 0.08) !important;
-  }
-  .input-dark:focus {
-    border-color: hsl(var(--primary)) !important;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15) !important;
-  }
-
-  /* ─── Select dropdown ─── */
-  .select-dropdown {
-    background-color: #181825 !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  }
-
-  /* ─── Sheet / Dialog background ─── */
-  .sheet-bg {
-    background-color: #0a0a12 !important;
-  }
-
-  /* ─── Form section (grouped inputs) ─── */
-  .form-section {
-    background: linear-gradient(135deg, rgba(20, 20, 32, 0.5), rgba(14, 14, 22, 0.6));
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    background: linear-gradient(145deg, rgba(26, 28, 44, 0.75), rgba(18, 18, 30, 0.85));
+    border: 1px solid rgba(255, 255, 255, 0.055);
+    border-left: 2px solid rgba(59, 130, 246, 0.35);
     border-radius: 0.75rem;
     padding: 0.875rem;
   }
 
+  /* ─── Input dark surface ─── */
+  .input-dark {
+    background-color: #0e0e18 !important;
+    border-color: rgba(255, 255, 255, 0.07) !important;
+    color: #eceff4 !important;
+  }
+  .input-dark:focus, .input-dark:focus-within {
+    border-color: hsl(var(--primary)) !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.18) !important;
+    background-color: #10101c !important;
+  }
+
+  /* ─── Select dropdown ─── */
+  .select-dropdown {
+    background-color: #14141f !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  /* ─── Sheet / Dialog background ─── */
+  .sheet-bg {
+    background-color: #090910 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.07) !important;
+  }
+
+  /* ─── Form section (grouped inputs) ─── */
+  .form-section {
+    background: linear-gradient(145deg, rgba(18, 18, 30, 0.6), rgba(12, 12, 20, 0.7));
+    border: 1px solid rgba(255, 255, 255, 0.045);
+    border-radius: 0.875rem;
+    padding: 1rem;
+  }
+
+  /* ─── Settings card ─── */
+  .settings-card {
+    background: linear-gradient(145deg, rgba(20, 20, 32, 0.9), rgba(14, 14, 24, 0.95));
+    border: 1px solid rgba(255, 255, 255, 0.055);
+    border-radius: 0.875rem;
+    overflow: hidden;
+  }
+  .settings-card-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    min-height: 56px;
+  }
+  .settings-card-row:last-child {
+    border-bottom: none;
+  }
+
   /* ─── Empty state ─── */
   .empty-state {
-    background: linear-gradient(135deg, rgba(24, 24, 37, 0.5), rgba(18, 18, 28, 0.6));
+    background: linear-gradient(145deg, rgba(20, 20, 32, 0.5), rgba(14, 14, 22, 0.6));
     border: 1px dashed rgba(255, 255, 255, 0.08);
-    border-radius: 0.75rem;
-    padding: 2rem 1rem;
+    border-radius: 0.875rem;
+    padding: 2.5rem 1rem;
     text-align: center;
+  }
+
+  /* ─── Calc tab bar (scrollable) ─── */
+  .calc-tabs-scroll {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .calc-tabs-scroll::-webkit-scrollbar {
+    display: none;
+  }
+  .calc-tabs-inner {
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    min-width: max-content;
+  }
+  .calc-tab {
+    padding: 9px 16px;
+    border-radius: 10px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: all 0.18s ease;
+    color: hsl(var(--muted-foreground));
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    min-height: 0;
+  }
+  .calc-tab:hover {
+    color: hsl(var(--foreground));
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .calc-tab-active {
+    background: rgba(59, 130, 246, 0.2);
+    color: #93c5fd;
+    font-weight: 600;
+    box-shadow: 0 1px 8px rgba(59, 130, 246, 0.12), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+
+  /* ─── Bottom nav active pill ─── */
+  .nav-active-bg {
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 10px;
+    padding: 4px 12px;
   }
 
   /* ─── Animations ─── */
   @keyframes fadeSlideIn {
-    from { opacity: 0; transform: translateY(8px); }
+    from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
   }
 
+  @keyframes shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+
   .animate-result {
-    animation: fadeSlideIn 0.2s ease-out;
+    animation: fadeSlideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  /* Surface variant for IQI inline card */
+  /* ─── Surface variant ─── */
   .surface-alt {
-    background-color: #1e2030;
+    background-color: #181828;
   }
 
-  /* ─── Scrollbar ─── */
+  /* ─── Source status badge ─── */
+  .source-status-high { color: #34d399; }
+  .source-status-mid { color: #fbbf24; }
+  .source-status-low { color: #f87171; }
+
+  /* ─── Pipe table row ─── */
+  .pipe-row {
+    display: grid;
+    align-items: center;
+    padding: 0.75rem;
+    border-radius: 0.625rem;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    transition: all 0.15s ease;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    background: linear-gradient(145deg, rgba(22, 22, 34, 0.85), rgba(16, 16, 26, 0.92));
+  }
+  .pipe-row:hover {
+    border-color: rgba(59, 130, 246, 0.3);
+    background: linear-gradient(145deg, rgba(30, 30, 50, 0.85), rgba(20, 20, 36, 0.92));
+  }
+  .pipe-row-expanded {
+    border-color: rgba(59, 130, 246, 0.5);
+    background: rgba(30, 60, 100, 0.15);
+  }
+
+  /* ─── Scrollbar (thin) ─── */
   ::-webkit-scrollbar { width: 3px; height: 3px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
 }
