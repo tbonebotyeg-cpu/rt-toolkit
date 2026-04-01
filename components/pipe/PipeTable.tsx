@@ -2,225 +2,244 @@
 
 import { useState, useMemo } from "react";
 import { PIPE_SCHEDULES } from "@/lib/data/pipeSchedules";
-import { ScheduleEntry } from "@/types";
-import { calculateIqi } from "@/lib/data/iqiWires";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { IQI_WIRES } from "@/lib/data/iqiWires";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ClipboardCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// ASME Section V, Article 2, Table T-276
+// Source-side essential wire by nominal single-wall material thickness
+function selectSourceWire(wallInches: number): number {
+  if (wallInches <= 0.25) return 5;
+  if (wallInches <= 0.375) return 6;
+  if (wallInches <= 0.50) return 7;
+  if (wallInches <= 0.75) return 8;
+  if (wallInches <= 1.00) return 9;
+  if (wallInches <= 1.50) return 10;
+  if (wallInches <= 2.00) return 11;
+  if (wallInches <= 2.50) return 12;
+  return 13;
+}
+
+function getWireDiam(wireNumber: number) {
+  return IQI_WIRES.find((w) => w.wireNumber === wireNumber);
+}
+
+function wireSetLabel(wireNumber: number): "A" | "B" | "C" {
+  if (wireNumber <= 7) return "A";
+  if (wireNumber <= 13) return "B";
+  return "C";
+}
 
 export default function PipeTable() {
   const [selectedNps, setSelectedNps] = useState<string>("8");
-  const [copiedSchedule, setCopiedSchedule] = useState<string | null>(null);
-  const [expandedSchedule, setExpandedSchedule] = useState<string | null>(null);
+  const [selectedSchedule, setSelectedSchedule] = useState<string>("");
 
   const pipe = useMemo(
     () => PIPE_SCHEDULES.find((p) => p.nps === selectedNps),
     [selectedNps]
   );
 
-  function handleCopy(entry: ScheduleEntry) {
-    const text = `Wall: ${entry.wall.toFixed(3)}"`;
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedSchedule(entry.schedule);
-      if (navigator.vibrate) navigator.vibrate(30);
-      setTimeout(() => setCopiedSchedule(null), 2000);
-    }).catch(() => {
-      // Clipboard API not available (e.g. non-HTTPS)
-    });
+  const sortedSchedules = useMemo(() => {
+    if (!pipe) return [];
+    return [...pipe.schedules].sort((a, b) => a.wall - b.wall);
+  }, [pipe]);
+
+  // Reset schedule when NPS changes
+  function handleNpsChange(nps: string | null) {
+    if (!nps) return;
+    setSelectedNps(nps);
+    setSelectedSchedule("");
   }
 
-  function handleScheduleClick(entry: ScheduleEntry) {
-    handleCopy(entry);
-    setExpandedSchedule(
-      expandedSchedule === entry.schedule ? null : entry.schedule
-    );
-  }
+  const entry = useMemo(
+    () => sortedSchedules.find((s) => s.schedule === selectedSchedule),
+    [sortedSchedules, selectedSchedule]
+  );
+
+  const derived = useMemo(() => {
+    if (!pipe || !entry) return null;
+    const wall = entry.wall;
+    const od = pipe.od;
+    const id = od - 2 * wall;
+    const sourceWire = selectSourceWire(wall);
+    const filmWire = Math.max(sourceWire - 1, 1);
+    const sourceSet = wireSetLabel(sourceWire);
+    const filmSet = wireSetLabel(filmWire);
+    const sourceWireData = getWireDiam(sourceWire);
+    const filmWireData = getWireDiam(filmWire);
+    return { wall, od, id, sourceWire, filmWire, sourceSet, filmSet, sourceWireData, filmWireData };
+  }, [pipe, entry]);
+
+  // 1/2"–1-1/2": source side only (no film penny)
+  // 3"–6": film side only (no source penny)
+  const sourceOnlyNps = ["1/2", "3/4", "1", "1-1/4", "1-1/2"];
+  const filmOnlyNps = ["3", "3-1/2", "4", "5", "6"];
+  const showSource = !filmOnlyNps.includes(selectedNps);
+  const showFilm = !sourceOnlyNps.includes(selectedNps);
 
   return (
-    <div className="p-4 space-y-4">
-      <div>
-        <label className="text-xs text-muted-foreground mb-1.5 block font-medium uppercase tracking-wide">
-          NPS Size
-        </label>
-        <Select value={selectedNps} onValueChange={(v) => v && setSelectedNps(v)}>
-          <SelectTrigger className="h-12 text-base input-dark">
-            <SelectValue placeholder="Select NPS" />
-          </SelectTrigger>
-          <SelectContent className="select-dropdown">
-            {PIPE_SCHEDULES.map((p) => (
-              <SelectItem key={p.nps} value={p.nps} className="text-base py-3">
-                NPS {p.npsDisplay} — OD {p.od.toFixed(3)}&quot;
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+    <div className="space-y-4">
+      {/* Dropdowns — side by side, edge to edge */}
+      <div className="grid grid-cols-2 gap-2 pt-4 px-2">
+        <div>
+          <label className="section-label block mb-2 px-1">Pipe Size</label>
+          <Select value={selectedNps} onValueChange={handleNpsChange}>
+            <SelectTrigger className="h-14 text-base input-dark px-3 w-full [&_[data-slot=select-value]]:justify-center [&_[data-slot=select-value]]:text-center">
+              <SelectValue placeholder="Select NPS" />
+            </SelectTrigger>
+            <SelectContent className="select-dropdown !w-[calc(100vw-1rem)]" align="start">
+              {PIPE_SCHEDULES.filter((p) => !["1/8","1/4","3/8"].includes(p.nps)).map((p, i) => (
+                <SelectItem key={p.nps} value={p.nps} className={`text-base py-3.5 !pl-2 !pr-2 [&>div:first-child]:justify-center [&>div:first-child]:text-center ${i % 2 === 1 ? "bg-white/[0.04]" : ""}`}>
+                  {p.npsDisplay}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <label className="section-label block mb-2 px-1">Schedule</label>
+          <Select value={selectedSchedule} onValueChange={(v) => v && setSelectedSchedule(v)}>
+            <SelectTrigger className="h-14 text-base input-dark px-3 w-full [&_[data-slot=select-value]]:justify-center [&_[data-slot=select-value]]:text-center">
+              <SelectValue placeholder="Select" />
+            </SelectTrigger>
+            <SelectContent className="select-dropdown !w-[calc(100vw-1rem)]" align="end">
+              {sortedSchedules.map((s, i) => (
+                <SelectItem key={s.schedule} value={s.schedule} className={`text-base py-3.5 !pl-2 !pr-2 [&>div:first-child]:justify-center [&>div:first-child]:text-center ${i % 2 === 1 ? "bg-white/[0.04]" : ""}`}>
+                  {s.schedule}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {pipe && (
-        <>
-          {/* OD Info Card */}
-          <Card className="p-4 glass-card-elevated gradient-border">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
-                  Outer Diameter
-                </p>
-                <p
-                  className="tabular-nums font-bold"
-                  style={{ fontSize: "2rem", color: "#fff" }}
-                >
-                  {pipe.od.toFixed(3)}&quot;
-                </p>
-                <p className="text-muted-foreground text-sm mt-0.5">
-                  {(pipe.od * 25.4).toFixed(2)} mm
-                </p>
-              </div>
-              <div className="flex flex-col items-end gap-2">
-                {pipe.odNominalEqual ? (
-                  <Badge className="bg-green-900 text-green-300 border-green-700 text-xs">
-                    NPS = OD
-                  </Badge>
-                ) : (
-                  <Badge className="bg-amber-900 text-amber-300 border-amber-700 text-xs">
-                    OD ≠ NPS
-                  </Badge>
-                )}
-                <p className="text-xs text-muted-foreground text-right">
-                  NPS {pipe.npsDisplay}
-                </p>
-              </div>
-            </div>
-            {!pipe.odNominalEqual && (
-              <p className="text-amber-400 text-xs mt-2 border-t border-border pt-2">
-                OD is NOT equal to NPS designation. Nominal size only — verify OD before calculating.
+      {/* Info Card */}
+      {derived && entry && pipe && (
+        <div className="mx-4 glass-card-elevated gradient-border rounded-xl p-5 space-y-5 animate-result">
+
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">
+                NPS {pipe.npsDisplay} — {entry.schedule}
               </p>
-            )}
-          </Card>
-
-          {/* Schedule Table */}
-          <div>
-            <p className="section-label mb-2">
-              Schedules — smallest to largest wall
-            </p>
-
-            {/* Table Header */}
-            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 px-3 pb-2 text-[10px] text-muted-foreground uppercase tracking-wider">
-              <span>Schedule</span>
-              <span className="text-right">Wall</span>
-              <span className="text-right">OD</span>
-              <span className="text-right">Wire #</span>
             </div>
-
-            <div className="space-y-1.5">
-              {[...pipe.schedules]
-                .sort((a, b) => a.wall - b.wall)
-                .map((entry) => {
-                  const isCopied = copiedSchedule === entry.schedule;
-                  const isExpanded = expandedSchedule === entry.schedule;
-                  const iqi = calculateIqi(entry.wall, "SWE/SWV", "Source Side");
-
-                  return (
-                    <div key={entry.schedule}>
-                      <button
-                        onClick={() => handleScheduleClick(entry)}
-                        className={cn(
-                          "w-full grid grid-cols-[1fr_auto_auto_auto] gap-x-3 items-center p-3 rounded-lg border transition-all text-left",
-                          isExpanded
-                            ? "border-blue-500 bg-blue-950/30"
-                            : "border-white/[0.04] hover:border-blue-700 glass-card"
-                        )}
-                        style={{
-                          borderLeftWidth: "3px",
-                          borderLeftColor: iqi.set === "A" ? "rgba(96, 165, 250, 0.5)"
-                            : iqi.set === "B" ? "rgba(52, 211, 153, 0.5)"
-                            : "rgba(251, 191, 36, 0.5)",
-                        }}
-                      >
-                        {/* Schedule name */}
-                        <div className="min-w-0">
-                          <p className="font-semibold text-sm text-foreground truncate">
-                            {entry.schedule}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">
-                            {(entry.wall * 25.4).toFixed(2)} mm
-                          </p>
-                        </div>
-
-                        {/* Wall thickness */}
-                        <div className="text-right">
-                          <p className="tabular-nums font-bold text-base text-white">
-                            {entry.wall.toFixed(3)}&quot;
-                          </p>
-                          {isCopied && (
-                            <ClipboardCheck size={12} className="text-green-400 ml-auto mt-0.5" />
-                          )}
-                        </div>
-
-                        {/* OD */}
-                        <div className="text-right">
-                          <p className="tabular-nums text-sm text-muted-foreground">
-                            {pipe.od.toFixed(3)}&quot;
-                          </p>
-                        </div>
-
-                        {/* Wire # */}
-                        <div className="text-right min-w-[3.5rem]">
-                          <Badge className={cn(
-                            "text-[10px] tabular-nums",
-                            iqi.set === "A" ? "bg-blue-900/60 text-blue-300 border-blue-700/50"
-                              : iqi.set === "B" ? "bg-emerald-900/60 text-emerald-300 border-emerald-700/50"
-                              : "bg-amber-900/60 text-amber-300 border-amber-700/50"
-                          )}>
-                            #{iqi.essentialWireNumber} {iqi.set}
-                          </Badge>
-                        </div>
-                      </button>
-
-                      {/* Expanded IQI Details */}
-                      {isExpanded && (
-                        <div
-                          className="rounded-b-lg border border-t-0 border-blue-500 p-4 space-y-2 animate-result formula-box"
-                        >
-                          <p className="text-xs font-semibold text-blue-300 uppercase tracking-wide">
-                            IQI Details — ASTM E747
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Parent material wall:{" "}
-                            <span className="text-white font-semibold">
-                              {entry.wall.toFixed(3)}&quot;
-                            </span>
-                            {" "}— reinforcement excluded per ASME V T-274.2
-                          </p>
-                          <div className="grid grid-cols-2 gap-3 pt-1 border-t border-white/[0.06]">
-                            <div>
-                              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Source Side</p>
-                              <p className="font-bold text-white text-sm mt-0.5">
-                                Wire #{iqi.essentialWireNumber} — Set {iqi.set}
-                              </p>
-                              <p className="text-xs text-muted-foreground tabular-nums">
-                                {iqi.essentialWireDiam.toFixed(4)}&quot; ({(iqi.essentialWireDiam * 25.4).toFixed(2)} mm)
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Film Side</p>
-                              <p className="font-bold text-amber-300 text-sm mt-0.5">
-                                Wire #{Math.min(iqi.essentialWireNumber + 1, 16)}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {iqi.holeTypeEquiv}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+            <div className="text-right">
+              <span className={cn(
+                "text-xs font-medium px-2.5 py-1 rounded-full border",
+                pipe.odNominalEqual
+                  ? "bg-green-900/60 text-green-300 border-green-700/50"
+                  : "bg-amber-900/60 text-amber-300 border-amber-700/50"
+              )}>
+                {pipe.odNominalEqual ? "NPS = OD" : "OD ≠ NPS"}
+              </span>
             </div>
           </div>
-        </>
+
+          <div className="border-t border-white/[0.06]" />
+
+          {/* Dimensions Grid */}
+          <div className="grid grid-cols-3 gap-3">
+            {/* Wall Thickness */}
+            <div className="rounded-lg bg-white/[0.04] border border-white/[0.06] p-3 text-center">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-2">
+                Wall
+              </p>
+              <p className="tabular-nums font-black text-white leading-none" style={{ fontSize: "1.5rem" }}>
+                {derived.wall.toFixed(3)}&quot;
+              </p>
+              <p className="tabular-nums text-xs text-blue-300 mt-1.5 font-medium">
+                {(derived.wall * 25.4).toFixed(2)} mm
+              </p>
+            </div>
+
+            {/* Outside Diameter */}
+            <div className="rounded-lg bg-white/[0.04] border border-white/[0.06] p-3 text-center">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-2">
+                OD
+              </p>
+              <p className="tabular-nums font-black text-white leading-none" style={{ fontSize: "1.5rem" }}>
+                {derived.od.toFixed(3)}&quot;
+              </p>
+              <p className="tabular-nums text-xs text-blue-300 mt-1.5 font-medium">
+                {(derived.od * 25.4).toFixed(2)} mm
+              </p>
+            </div>
+
+            {/* Inside Diameter */}
+            <div className="rounded-lg bg-white/[0.04] border border-white/[0.06] p-3 text-center">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-2">
+                ID
+              </p>
+              <p className="tabular-nums font-black text-white leading-none" style={{ fontSize: "1.5rem" }}>
+                {derived.id.toFixed(3)}&quot;
+              </p>
+              <p className="tabular-nums text-xs text-blue-300 mt-1.5 font-medium">
+                {(derived.id * 25.4).toFixed(2)} mm
+              </p>
+            </div>
+          </div>
+
+          <div className="border-t border-white/[0.06]" />
+
+          {/* IQI Wire Selection */}
+          <div>
+            <p className="section-label mb-3">IQI Wire Selection</p>
+            <div className={`grid gap-3 ${showSource && showFilm ? "grid-cols-2" : "grid-cols-1"}`}>
+              {/* Source Side */}
+              {showSource && <div className="rounded-lg border border-blue-700/40 bg-blue-950/25 p-4">
+                <p className="text-[10px] text-blue-400 uppercase tracking-widest font-medium mb-3">
+                  Source Side
+                </p>
+                <p className="tabular-nums font-black text-white leading-none" style={{ fontSize: "2rem" }}>
+                  #{derived.sourceWire}
+                </p>
+                <p className="text-xs text-blue-300 font-semibold mt-1">
+                  {derived.sourceWire >= 6 ? "B Penny" : "A Penny"}
+                </p>
+                {derived.sourceWireData && (
+                  <p className="text-[11px] text-muted-foreground tabular-nums mt-2">
+                    ∅ {derived.sourceWireData.diameterIn.toFixed(4)}&quot;
+                    {" / "}{derived.sourceWireData.diameterMm.toFixed(2)} mm
+                  </p>
+                )}
+              </div>}
+
+              {/* Film Side */}
+              {showFilm && <div className="rounded-lg border border-amber-700/40 bg-amber-950/20 p-4">
+                <p className="text-[10px] text-amber-400 uppercase tracking-widest font-medium mb-3">
+                  Film Side
+                </p>
+                <p className="tabular-nums font-black text-white leading-none" style={{ fontSize: "2rem" }}>
+                  #{derived.filmWire}
+                </p>
+                <p className="text-xs text-amber-300 font-semibold mt-1">
+                  {derived.filmWire >= 6 ? "B Penny" : "A Penny"}
+                </p>
+                {derived.filmWireData && (
+                  <p className="text-[11px] text-muted-foreground tabular-nums mt-2">
+                    ∅ {derived.filmWireData.diameterIn.toFixed(4)}&quot;
+                    {" / "}{derived.filmWireData.diameterMm.toFixed(2)} mm
+                  </p>
+                )}
+              </div>}
+            </div>
+
+          </div>
+
+          {/* Footer note */}
+          <p className="text-[10px] text-muted-foreground/60 border-t border-white/[0.04] pt-3 leading-relaxed">
+            IQI based on nominal single-wall (parent material) thickness only — weld reinforcement and backing rings excluded per ASME V T-274.2
+          </p>
+        </div>
+      )}
+
+      {/* Prompt when no schedule selected */}
+      {pipe && !entry && (
+        <div className="mx-4 rounded-xl border border-white/[0.06] glass-card p-6 text-center">
+          <p className="text-muted-foreground text-sm">Select a schedule to see wall thickness and IQI wire data.</p>
+        </div>
       )}
     </div>
   );
