@@ -83,7 +83,7 @@ export default function PipeTable() {
             <SelectContent className="select-dropdown !w-[calc(100vw-1rem)]" align="start">
               {PIPE_SCHEDULES.filter((p) => !["1/8","1/4","3/8"].includes(p.nps)).map((p, i) => (
                 <SelectItem key={p.nps} value={p.nps} className={`text-base py-3.5 justify-center text-center ${i % 2 === 1 ? "bg-white/[0.04]" : ""}`}>
-                  NPS {p.npsDisplay}
+                  {p.npsDisplay}
                 </SelectItem>
               ))}
             </SelectContent>
