@@ -40,13 +40,13 @@ export default function ShotTimeCalc() {
   const [wallOverride, setWallOverride] = useState("");
   const [activity, setActivity] = useState("80");
   const [sfd, setSfd] = useState("36");
-  const [filmId, setFilmId] = useState("");
+  const [filmName, setFilmName] = useState("");
 
   // From Shot mode inputs
   const [selectedShotId, setSelectedShotId] = useState("");
   const [shotActivityNew, setShotActivityNew] = useState("");
   const [shotSfdNew, setShotSfdNew] = useState("");
-  const [shotFilmId, setShotFilmId] = useState("");
+  const [shotFilmName, setShotFilmName] = useState("");
 
   // Results
   const [manualResult, setManualResult] = useState<ManualResult | null>(null);
@@ -75,8 +75,8 @@ export default function ShotTimeCalc() {
     setActivity(String(settings.pinnedSourceActivityCi));
     const defaultFilm = f.find((film) => film.isDefault) ?? f[0];
     if (defaultFilm) {
-      setFilmId(defaultFilm.id);
-      setShotFilmId(defaultFilm.id);
+      setFilmName(defaultFilm.filmName);
+      setShotFilmName(defaultFilm.filmName);
     }
   }, []);
 
@@ -94,8 +94,7 @@ export default function ShotTimeCalc() {
     if (!shot) return;
     setShotActivityNew(String(shot.sourceActivityCi));
     setShotSfdNew(String(shot.sfd));
-    const matchedFilm = films.find((f) => f.filmName === shot.filmType);
-    if (matchedFilm) setShotFilmId(matchedFilm.id);
+    if (shot.filmType) setShotFilmName(shot.filmType);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedShotId]);
 
@@ -104,20 +103,20 @@ export default function ShotTimeCalc() {
     if (mode !== "manual") return;
     calcManual();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sourceType, wallThickness, activity, sfd, filmId, mode, films]);
+  }, [sourceType, wallThickness, activity, sfd, filmName, mode, films]);
 
   // Recalculate from-shot mode
   useEffect(() => {
     if (mode !== "fromShot") return;
     calcFromShot();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedShotId, shotActivityNew, shotSfdNew, shotFilmId, mode, films, shots]);
+  }, [selectedShotId, shotActivityNew, shotSfdNew, shotFilmName, mode, films, shots]);
 
   function calcManual() {
     setError("");
     const a = parseFloat(activity);
     const s = parseFloat(sfd);
-    const film = films.find((f) => f.id === filmId);
+    const film = films.find((f) => f.filmName === filmName);
     const r = film?.rFactor ?? 1.0;
 
     if (isNaN(a) || isNaN(s) || !wallThickness || wallThickness <= 0) {
@@ -152,7 +151,7 @@ export default function ShotTimeCalc() {
     }
     const aNew = parseFloat(shotActivityNew);
     const sNew = parseFloat(shotSfdNew);
-    const film = films.find((f) => f.id === shotFilmId);
+    const film = films.find((f) => f.filmName === shotFilmName);
     const rNew = film?.rFactor ?? 1.0;
 
     if (isNaN(aNew) || isNaN(sNew)) {
@@ -332,13 +331,13 @@ export default function ShotTimeCalc() {
             <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">
               Film Type
             </Label>
-            <Select value={filmId} onValueChange={(v) => v && setFilmId(v)}>
+            <Select value={filmName} onValueChange={(v) => v && setFilmName(v)}>
               <SelectTrigger className="h-12" style={{ backgroundColor: "#1a1a24" }}>
                 <SelectValue placeholder="Select film" />
               </SelectTrigger>
               <SelectContent style={{ backgroundColor: "#1a1a24" }}>
                 {films.map((f) => (
-                  <SelectItem key={f.id} value={f.id} className="py-2">
+                  <SelectItem key={f.id} value={f.filmName} className="py-2">
                     {f.filmName} (R={f.rFactor})
                   </SelectItem>
                 ))}
@@ -499,13 +498,13 @@ export default function ShotTimeCalc() {
                 <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">
                   New Film Type
                 </Label>
-                <Select value={shotFilmId} onValueChange={(v) => v && setShotFilmId(v)}>
+                <Select value={shotFilmName} onValueChange={(v) => v && setShotFilmName(v)}>
                   <SelectTrigger className="h-12" style={{ backgroundColor: "#1a1a24" }}>
                     <SelectValue placeholder="Select film" />
                   </SelectTrigger>
                   <SelectContent style={{ backgroundColor: "#1a1a24" }}>
                     {films.map((f) => (
-                      <SelectItem key={f.id} value={f.id} className="py-2">
+                      <SelectItem key={f.id} value={f.filmName} className="py-2">
                         {f.filmName} (R={f.rFactor})
                       </SelectItem>
                     ))}
