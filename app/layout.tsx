@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import BottomNav from "@/components/nav/BottomNav";
+import MainWrapper from "@/components/MainWrapper";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -45,7 +46,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         style={{ backgroundColor: "#0a0a12", color: "#f2f2f5" }}
       >
-        <main className="pb-20 min-h-screen">{children}</main>
+        <MainWrapper>{children}</MainWrapper>
         <BottomNav />
       </body>
     </html>

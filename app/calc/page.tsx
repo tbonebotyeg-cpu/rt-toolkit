@@ -7,27 +7,32 @@ import UgCalc from "@/components/calc/UgCalc";
 import IslCalc from "@/components/calc/IslCalc";
 import CiSecCalc from "@/components/calc/CiSecCalc";
 import ShotTimeCalc from "@/components/calc/ShotTimeCalc";
+import BarricadeCalc from "@/components/calc/BarricadeCalc";
+import ExposureCorrectCalc from "@/components/calc/ExposureCorrectCalc";
 
 const TABS = [
-  { key: "decay",    label: "Decay",     desc: "Activity" },
-  { key: "ug",       label: "Ug",        desc: "Sharpness" },
-  { key: "isl",      label: "ISL",       desc: "Correction" },
-  { key: "cisec",    label: "CI·sec",    desc: "Dose" },
-  { key: "shottime", label: "Shot Time", desc: "Exposure" },
+  { key: "decay",    label: "Decay",    desc: "Radioactive decay & projected activity" },
+  { key: "ug",       label: "Ug",       desc: "Geometric unsharpness (ASME V T-274.2)" },
+  { key: "isl",      label: "ISL",      desc: "Inverse square law SFD correction" },
+  { key: "cisec",    label: "CI·sec",   desc: "Dose adjustment for activity change" },
+  { key: "shottime", label: "Shot Time",desc: "Exposure time from chart or reference shot" },
+  { key: "barricade",label: "Barricade",desc: "Safe radiation boundary distances" },
+  { key: "expcorr",  label: "Film Corr",desc: "Exposure correction for film density (E₁/FD₁ = E₂/FD₂)" },
 ] as const;
 
 type CalcTab = (typeof TABS)[number]["key"];
 
 export default function CalcPage() {
   const [tab, setTab] = useState<CalcTab>("decay");
+  const activeTab = TABS.find(t => t.key === tab);
 
   return (
     <div>
       {/* Header */}
-      <div className="px-4 pt-4 pb-3">
+      <div className="px-4 pt-4 pb-2">
         <h1 className="text-xl font-bold tracking-tight">Calculators</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          {TABS.find(t => t.key === tab)?.desc}
+        <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
+          {activeTab?.desc}
         </p>
       </div>
 
@@ -48,11 +53,13 @@ export default function CalcPage() {
 
       {/* Content */}
       <div>
-        {tab === "decay"    && <DecayCalc />}
-        {tab === "ug"       && <UgCalc />}
-        {tab === "isl"      && <IslCalc />}
-        {tab === "cisec"    && <CiSecCalc />}
-        {tab === "shottime" && <ShotTimeCalc />}
+        {tab === "decay"     && <DecayCalc />}
+        {tab === "ug"        && <UgCalc />}
+        {tab === "isl"       && <IslCalc />}
+        {tab === "cisec"     && <CiSecCalc />}
+        {tab === "shottime"  && <ShotTimeCalc />}
+        {tab === "barricade" && <BarricadeCalc />}
+        {tab === "expcorr"   && <ExposureCorrectCalc />}
       </div>
     </div>
   );
