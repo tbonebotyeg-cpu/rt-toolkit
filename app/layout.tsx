@@ -45,7 +45,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         style={{ backgroundColor: "#0a0a12", color: "#f2f2f5" }}
       >
-        <main className="pb-20 min-h-screen">{children}</main>
+        <main className="pb-20 min-h-screen" style={{ paddingTop: "env(safe-area-inset-top)" }}>{children}</main>
         <BottomNav />
       </body>
     </html>

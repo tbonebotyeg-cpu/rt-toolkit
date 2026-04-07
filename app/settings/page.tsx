@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AppSettings, FilmTypeSetting, SourceType } from "@/types";
 import { loadSettings, saveSettings, resetAllData } from "@/lib/storage/settings";
 import { loadFilms, addFilm, updateFilm, deleteFilm } from "@/lib/storage/films";
@@ -14,18 +14,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Trash2, Plus, Star, Pencil, Atom, Film, Sliders, Database, CheckCircle } from "lucide-react";
+import { Trash2, Plus, Star, Pencil, Atom, Film, Sliders, Database, Info, Radiation, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [films, setFilms] = useState<FilmTypeSetting[]>([]);
-  const [saved, setSaved] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [filmSheetOpen, setFilmSheetOpen] = useState(false);
   const [editingFilm, setEditingFilm] = useState<FilmTypeSetting | null>(null);
+  const [saveFlash, setSaveFlash] = useState(false);
 
-  // Derived: today's decayed activity
   const [todayActivity, setTodayActivity] = useState<number | null>(null);
 
   useEffect(() => {
@@ -46,12 +45,18 @@ export default function SettingsPage() {
     } catch { /* noop */ }
   }
 
-  function handleSave() {
+  // Auto-save settings whenever they change
+  const persistSettings = useCallback((updated: AppSettings) => {
+    setSettings(updated);
+    saveSettings(updated);
+    computeToday(updated);
+    setSaveFlash(true);
+    setTimeout(() => setSaveFlash(false), 1200);
+  }, []);
+
+  function updateField(partial: Partial<AppSettings>) {
     if (!settings) return;
-    saveSettings(settings);
-    computeToday(settings);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    persistSettings({ ...settings, ...partial });
   }
 
   function handleReset() {
@@ -85,11 +90,6 @@ export default function SettingsPage() {
     setEditingFilm(null);
   }
 
-  function updateSettings(partial: Partial<AppSettings>) {
-    if (!settings) return;
-    setSettings({ ...settings, ...partial });
-  }
-
   if (!settings) return null;
 
   const activityColor = todayActivity !== null
@@ -101,9 +101,19 @@ export default function SettingsPage() {
   return (
     <div className="p-4 space-y-6 pb-8">
       {/* Header */}
-      <div className="pt-2">
-        <h1 className="text-xl font-bold tracking-tight">Settings</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Source, film, and preferences</p>
+      <div className="pt-2 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight">Settings</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Source, film, and preferences</p>
+        </div>
+        {/* Auto-save indicator */}
+        <div className={cn(
+          "flex items-center gap-1 text-xs transition-all duration-300",
+          saveFlash ? "text-emerald-400 opacity-100" : "opacity-0"
+        )}>
+          <Check size={12} />
+          Saved
+        </div>
       </div>
 
       {/* ── Source Configuration ── */}
@@ -148,7 +158,7 @@ export default function SettingsPage() {
                 </Label>
                 <Select
                   value={settings.pinnedSourceType}
-                  onValueChange={(v) => v && updateSettings({ pinnedSourceType: v as SourceType })}
+                  onValueChange={(v) => v && updateField({ pinnedSourceType: v as SourceType })}
                 >
                   <SelectTrigger className="h-12 input-dark">
                     <SelectValue />
@@ -166,7 +176,7 @@ export default function SettingsPage() {
                 <Input
                   type="number"
                   value={settings.pinnedSourceActivityCi}
-                  onChange={(e) => updateSettings({ pinnedSourceActivityCi: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => updateField({ pinnedSourceActivityCi: parseFloat(e.target.value) || 0 })}
                   placeholder="100"
                   className="h-12 text-base tabular-nums input-dark"
                 />
@@ -181,7 +191,7 @@ export default function SettingsPage() {
                 <Input
                   type="date"
                   value={settings.pinnedSourceCalDate}
-                  onChange={(e) => updateSettings({ pinnedSourceCalDate: e.target.value })}
+                  onChange={(e) => updateField({ pinnedSourceCalDate: e.target.value })}
                   className="h-12 input-dark"
                 />
               </div>
@@ -191,7 +201,7 @@ export default function SettingsPage() {
                 </Label>
                 <Input
                   value={settings.cameraSerial}
-                  onChange={(e) => updateSettings({ cameraSerial: e.target.value })}
+                  onChange={(e) => updateField({ cameraSerial: e.target.value })}
                   placeholder="e.g. IR-2045"
                   className="h-12 input-dark"
                 />
@@ -215,7 +225,7 @@ export default function SettingsPage() {
           <Select
             value={settings.unitsPreference}
             onValueChange={(v) =>
-              v && updateSettings({ unitsPreference: v as "imperial" | "metric" })
+              v && updateField({ unitsPreference: v as "imperial" | "metric" })
             }
           >
             <SelectTrigger className="h-12 input-dark">
@@ -228,21 +238,6 @@ export default function SettingsPage() {
           </Select>
         </div>
       </section>
-
-      {/* Save Button */}
-      <Button
-        onClick={handleSave}
-        className={cn(
-          "w-full h-12 text-base font-semibold gap-2 transition-all duration-300",
-          saved && "bg-emerald-600 hover:bg-emerald-600"
-        )}
-      >
-        {saved ? (
-          <><CheckCircle size={16} /> Saved!</>
-        ) : (
-          "Save Settings"
-        )}
-      </Button>
 
       <Separator className="opacity-30" />
 
@@ -352,7 +347,7 @@ export default function SettingsPage() {
       <Separator className="opacity-30" />
 
       {/* ── Data Management ── */}
-      <section className="space-y-2.5 pb-4">
+      <section className="space-y-2.5">
         <div className="section-heading">
           <Database size={12} className="text-red-400 opacity-100 mr-[-2px]" />
           Data Management
@@ -397,6 +392,49 @@ export default function SettingsPage() {
           </Dialog>
         </div>
       </section>
+
+      <Separator className="opacity-30" />
+
+      {/* ── About ── */}
+      <section className="space-y-2.5 pb-4">
+        <div className="section-heading">
+          <Info size={12} className="text-cyan-400 opacity-100 mr-[-2px]" />
+          About
+        </div>
+
+        <div className="glass-card rounded-xl overflow-hidden">
+          <div className="p-4 flex items-center gap-3 border-b border-white/[0.04]">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+              style={{
+                background: "linear-gradient(145deg, rgba(59,130,246,0.9), rgba(37,99,235,0.95))",
+              }}
+            >
+              <Radiation size={18} className="text-white" />
+            </div>
+            <div>
+              <p className="font-bold text-sm">RT Toolkit</p>
+              <p className="text-xs text-muted-foreground">v0.1.0</p>
+            </div>
+          </div>
+          <div className="p-4 space-y-2">
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Field reference and calculation tools for radiographic testing technicians.
+              All calculations follow ASME Section V standards.
+            </p>
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {["ASME V", "Ir-192", "Co-60", "B36.10M", "T-276"].map((tag) => (
+                <span key={tag} className="text-[10px] px-2 py-0.5 rounded-md bg-white/[0.04] text-muted-foreground border border-white/[0.06]">
+                  {tag}
+                </span>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground/50 pt-2">
+              Data stored locally on device only. No account required.
+            </p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
@@ -415,11 +453,17 @@ function FilmForm({
   const [devTemp, setDevTemp] = useState(String(initial?.developerTempF ?? "75"));
   const [devTime, setDevTime] = useState(String(initial?.developerTimeMin ?? "5"));
   const [notes, setNotes] = useState(initial?.notes ?? "");
+  const [error, setError] = useState("");
 
   function handleSubmit() {
+    if (!filmName.trim()) {
+      setError("Film name is required");
+      return;
+    }
+    setError("");
     onSave({
       id: initial?.id ?? generateId(),
-      filmName,
+      filmName: filmName.trim(),
       rFactor: parseFloat(rFactor) || 1,
       targetDensityMin: parseFloat(densityMin) || 2.0,
       targetDensityMax: parseFloat(densityMax) || 3.5,
@@ -436,10 +480,11 @@ function FilmForm({
         <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">Film Name</Label>
         <Input
           value={filmName}
-          onChange={(e) => setFilmName(e.target.value)}
+          onChange={(e) => { setFilmName(e.target.value); setError(""); }}
           placeholder="e.g. Agfa D5"
-          className="h-12 input-dark"
+          className={cn("h-12 input-dark", error && "border-red-500/50")}
         />
+        {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
       </div>
       <div>
         <Label className="text-xs text-muted-foreground mb-1.5 block uppercase tracking-wide">R-Factor</Label>

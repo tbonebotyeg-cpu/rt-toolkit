@@ -6,10 +6,10 @@ import { Home, Pipette, Calculator, BookOpen, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TABS = [
-  { href: "/",        label: "Home",     icon: Home },
-  { href: "/pipe",    label: "Pipe",     icon: Pipette },
-  { href: "/calc",    label: "Calc",     icon: Calculator },
-  { href: "/shots",   label: "Shots",    icon: BookOpen },
+  { href: "/",         label: "Home",     icon: Home },
+  { href: "/pipe",     label: "Pipe",     icon: Pipette },
+  { href: "/calc",     label: "Calc",     icon: Calculator },
+  { href: "/shots",    label: "Shots",    icon: BookOpen },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -34,19 +34,23 @@ export default function BottomNav() {
             <Link
               key={href}
               href={href}
-              className="flex flex-1 flex-col items-center justify-center gap-1 transition-all duration-200 active:opacity-70"
+              className="flex flex-1 flex-col items-center justify-center gap-0.5 transition-all duration-200 active:opacity-70"
             >
               <div className={cn(
-                "flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all duration-200",
+                "relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all duration-200",
                 active && "bg-blue-500/12"
               )}>
+                {/* Active dot indicator */}
+                {active && (
+                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-blue-400 shadow-[0_0_6px_rgba(96,165,250,0.6)]" />
+                )}
                 <Icon
-                  size={22}
+                  size={21}
                   strokeWidth={active ? 2.2 : 1.7}
                   className={cn(
                     "transition-all duration-200",
                     active
-                      ? "text-blue-400 drop-shadow-[0_0_10px_rgba(96,165,250,0.5)]"
+                      ? "text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.45)]"
                       : "text-slate-500"
                   )}
                 />
